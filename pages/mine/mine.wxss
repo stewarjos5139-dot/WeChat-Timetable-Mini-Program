@@ -1,0 +1,121 @@
+/**pages/mine/mine.wxss**/
+
+.page {
+  min-height: 100vh;
+}
+
+.pad {
+  padding: 24rpx 32rpx 0;
+}
+
+/* ============ 用户信息卡 ============ */
+.profile {
+  position: relative;
+  padding: 44rpx 36rpx;
+  border-radius: var(--r-lg);
+  background: linear-gradient(150deg, #19C493 0%, #0FA97E 55%, #0B8E6A 100%);
+  box-shadow: 0 12rpx 32rpx rgba(15, 169, 126, 0.24);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.profile::after {
+  content: '';
+  position: absolute;
+  top: -140rpx;
+  right: -110rpx;
+  width: 360rpx;
+  height: 360rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.avatar {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 108rpx;
+  height: 108rpx;
+  margin-right: 26rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.24);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+}
+
+.profile-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.profile-sub {
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.profile-btn {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  height: 64rpx;
+  padding: 0 32rpx;
+  border-radius: 32rpx;
+  background: #fff;
+  color: var(--brand-dark);
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 64rpx;
+}
+
+.profile-btn--hover {
+  background: #E8F7F2;
+}
+
+/* ============ 设置项 ============ */
+.row {
+  padding: 30rpx 32rpx;
+  display: flex;
+  align-items: center;
+}
+
+.row--hover {
+  background: #F7FAF9;
+}
+
+.row-icon {
+  flex: none;
+  width: 52rpx;
+  font-size: 32rpx;
+}
+
+.row-label {
+  flex: 1;
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+.row-value {
+  margin-right: 12rpx;
+  font-size: 25rpx;
+  color: var(--text-3);
+}
+
+.row-arrow {
+  font-size: 34rpx;
+  line-height: 1;
+  color: #C7D2D6;
+}

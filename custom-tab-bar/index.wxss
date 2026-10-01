@@ -1,0 +1,63 @@
+/**custom-tab-bar/index.wxss**/
+
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1rpx solid #EEF3F2;
+  box-shadow: 0 -6rpx 24rpx rgba(15, 169, 126, 0.06);
+}
+
+.bar-body {
+  height: 110rpx;
+  display: flex;
+  align-items: center;
+}
+
+.bar-safe {
+  height: env(safe-area-inset-bottom);
+}
+
+.item {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.item--on {
+  transform: translateY(-2rpx);
+}
+
+.item-icon {
+  font-size: 40rpx;
+  line-height: 1;
+  filter: grayscale(1);
+  opacity: 0.45;
+  transition: all 0.2s ease;
+}
+
+.item-text {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #9AA8B0;
+  transition: color 0.2s ease;
+}
+
+/* 选中态：图标恢复彩色并放大，文字变主色 */
+.item--on .item-icon {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.item--on .item-text {
+  color: #0FA97E;
+  font-weight: 500;
+}

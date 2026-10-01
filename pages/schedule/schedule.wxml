@@ -1,0 +1,108 @@
+<!--pages/schedule/schedule.wxml-->
+<view class="page">
+
+  <!-- ============ 周次切换 ============ -->
+  <view class="weekbar">
+    <view class="weekbar-btn" bindtap="onPrevWeek" hover-class="weekbar-btn--hover" hover-stay-time="60">
+      <text class="weekbar-arrow">‹</text>
+    </view>
+
+    <view class="weekbar-center" bindtap="onToday">
+      <view class="weekbar-line">
+        <text class="weekbar-week">第 {{week}} 周</text>
+        <text class="weekbar-badge" wx:if="{{week === thisWeek}}">本周</text>
+        <text class="weekbar-back" wx:else>回到本周</text>
+      </view>
+      <text class="weekbar-range">{{weekRangeText}}</text>
+    </view>
+
+    <view class="weekbar-btn" bindtap="onNextWeek" hover-class="weekbar-btn--hover" hover-stay-time="60">
+      <text class="weekbar-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- ============ 星期表头（吸顶） ============ -->
+  <view class="head">
+    <view class="head-gutter">
+      <text class="head-gutter-text">节次</text>
+    </view>
+    <view
+      class="head-day {{item.isToday ? 'head-day--today' : ''}}"
+      wx:for="{{days}}"
+      wx:key="day"
+    >
+      <text class="head-label">{{item.label}}</text>
+      <text class="head-date">{{item.date}}</text>
+    </view>
+  </view>
+
+  <!-- ============ 课程网格 ============ -->
+  <view class="grid">
+    <!-- 左侧节次列 -->
+    <view class="gutter">
+      <view class="gutter-cell" wx:for="{{sections}}" wx:key="i" style="height: {{rowH}}rpx;">
+        <text class="gutter-idx">{{item.i}}</text>
+        <text class="gutter-time">{{item.from}}</text>
+      </view>
+    </view>
+
+    <!-- 7 天课程列 -->
+    <view
+      class="col {{item.isToday ? 'col--today' : ''}}"
+      wx:for="{{days}}"
+      wx:key="day"
+    >
+      <!-- 背景格子，撑开高度并画出横线 -->
+      <view class="slot" wx:for="{{sections}}" wx:for-item="s" wx:key="i" style="height: {{rowH}}rpx;"></view>
+
+      <!-- 课程块，绝对定位浮在格子上方 -->
+      <view
+        class="block"
+        wx:for="{{item.courses}}"
+        wx:for-item="c"
+        wx:key="id"
+        style="{{c.style}}"
+        data-id="{{c.id}}"
+        bindtap="onCourseTap"
+        hover-class="block--hover"
+        hover-stay-time="60"
+      >
+        <text class="block-name">{{c.name}}</text>
+        <text class="block-room">{{c.room}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-tip">本周共 {{weekCourseCount}} 节课 · 点击方块查看详情</view>
+  <view class="tabbar-space"></view>
+</view>
+
+<!-- ============ 课程详情弹层 ============ -->
+<view class="mask" wx:if="{{showDetail}}" bindtap="onCloseDetail" catchtouchmove="noop"></view>
+
+<view class="sheet" wx:if="{{showDetail}}">
+  <view class="sheet-bar"></view>
+  <view class="sheet-name" style="color: {{detail.text}};">{{detail.name}}</view>
+
+  <view class="sheet-list">
+    <view class="sheet-row">
+      <text class="sheet-k">时间</text>
+      <text class="sheet-v">{{detail.timeText}}</text>
+    </view>
+    <view class="sheet-row">
+      <text class="sheet-k">地点</text>
+      <text class="sheet-v">{{detail.room}}</text>
+    </view>
+    <view class="sheet-row">
+      <text class="sheet-k">教师</text>
+      <text class="sheet-v">{{detail.teacher}}</text>
+    </view>
+    <view class="sheet-row">
+      <text class="sheet-k">周次</text>
+      <text class="sheet-v">{{detail.weekText}}</text>
+    </view>
+  </view>
+
+  <view class="sheet-btn" bindtap="onCloseDetail" hover-class="sheet-btn--hover" hover-stay-time="60">知道了</view>
+  <view class="sheet-safe"></view>
+</view>

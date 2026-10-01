@@ -1,0 +1,99 @@
+/**app.wxss —— 全局设计系统：清新活力风**/
+
+page {
+  /* 主色 */
+  --brand: #0FA97E;
+  --brand-dark: #0A8763;
+  --brand-soft: #E6F7F1;
+  --brand-softer: #F2FAF7;
+
+  /* 文本层级 */
+  --text-1: #1A2B32;
+  --text-2: #6B7B85;
+  --text-3: #9AA8B0;
+
+  /* 背景与线条 */
+  --bg: #F4F8F7;
+  --card: #FFFFFF;
+  --line: #EEF3F2;
+
+  /* 圆角 */
+  --r-sm: 12rpx;
+  --r-md: 20rpx;
+  --r-lg: 28rpx;
+  --r-xl: 36rpx;
+
+  /* 阴影 */
+  --shadow-card: 0 6rpx 24rpx rgba(15, 169, 126, 0.07);
+  --shadow-float: 0 12rpx 40rpx rgba(15, 169, 126, 0.14);
+
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', Helvetica, sans-serif;
+  font-size: 28rpx;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+view,
+text,
+scroll-view {
+  box-sizing: border-box;
+}
+
+/* ---------- 通用卡片 ---------- */
+.card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* ---------- 区块标题 ---------- */
+.section {
+  margin-top: 44rpx;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 8rpx 20rpx;
+}
+
+.section-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: 0.5rpx;
+}
+
+.section-more {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+
+.section-more::after {
+  content: ' ›';
+  font-size: 28rpx;
+}
+
+/* ---------- 列表项分割线 ---------- */
+.divide {
+  height: 1rpx;
+  background: var(--line);
+  margin-left: 32rpx;
+}
+
+/* ---------- 自定义 tabBar 占位 ---------- */
+/* 自定义 tabBar 是悬浮层，不会自动压缩页面高度，需要在内容末尾手动留白 */
+.tabbar-space {
+  height: calc(140rpx + env(safe-area-inset-bottom));
+}
+
+.footer-tip {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--text-3);
+  padding: 48rpx 0 0;
+  letter-spacing: 1rpx;
+}

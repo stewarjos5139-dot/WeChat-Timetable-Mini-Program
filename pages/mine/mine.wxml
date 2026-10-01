@@ -1,0 +1,43 @@
+<!--pages/mine/mine.wxml-->
+<view class="page">
+  <view class="pad">
+
+    <!-- 用户信息 -->
+    <view class="profile">
+      <view class="avatar">👤</view>
+      <view class="profile-body">
+        <text class="profile-name">未登录</text>
+        <text class="profile-sub">登录后同步课表与借阅信息</text>
+      </view>
+      <view class="profile-btn" bindtap="onLogin" hover-class="profile-btn--hover" hover-stay-time="60">登录</view>
+    </view>
+
+    <!-- 设置 -->
+    <view class="section">
+      <view class="section-head">
+        <text class="section-title">设置</text>
+      </view>
+
+      <view class="card">
+        <view class="row" bindtap="onClearCache" hover-class="row--hover" hover-stay-time="60">
+          <text class="row-icon">🧹</text>
+          <text class="row-label">清除缓存</text>
+          <text class="row-arrow">›</text>
+        </view>
+
+        <view class="divide"></view>
+
+        <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60">
+          <text class="row-icon">ℹ️</text>
+          <text class="row-label">关于 ilove财大</text>
+          <text class="row-value">v{{version}}</text>
+          <text class="row-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="footer-tip">— ilove财大 —</view>
+  </view>
+
+  <view class="tabbar-space"></view>
+</view>

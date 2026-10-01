@@ -1,0 +1,102 @@
+<!--pages/index/index.wxml-->
+<view class="page">
+
+  <!-- ============ 顶部渐变头 ============ -->
+  <view class="hero" style="padding-top: {{statusBarHeight}}px;">
+    <view class="navbar">
+      <view class="brand">
+        <view class="brand-mark">财</view>
+        <text class="brand-name">ilove财大</text>
+      </view>
+      <view class="bell" bindtap="onNotice">
+        <text class="bell-icon">🔔</text>
+        <view class="bell-dot"></view>
+      </view>
+    </view>
+
+    <view class="greet">
+      <view class="greet-title">{{greeting}}</view>
+      <view class="greet-sub">{{subGreeting}}</view>
+    </view>
+
+    <view class="search" bindtap="onSearch">
+      <text class="search-icon">🔍</text>
+      <text class="search-ph">搜索课程、资讯、场所</text>
+    </view>
+  </view>
+
+  <!-- ============ 快捷入口（上浮卡片） ============ -->
+  <view class="quick card">
+    <view
+      class="quick-item"
+      wx:for="{{quickActions}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onAction"
+      hover-class="quick-item--hover"
+      hover-stay-time="80"
+    >
+      <view class="quick-icon" style="background: {{item.tint}};">{{item.icon}}</view>
+      <text class="quick-label">{{item.label}}</text>
+    </view>
+  </view>
+
+  <!-- ============ 校园资讯 ============ -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">校园资讯</text>
+      <text class="section-more" bindtap="onMoreNews">全部</text>
+    </view>
+
+    <view class="card news-card">
+      <block wx:for="{{newsList}}" wx:key="id">
+        <view class="divide" wx:if="{{index > 0}}"></view>
+        <view
+          class="news-item"
+          bindtap="onMoreNews"
+          hover-class="row--hover"
+          hover-stay-time="80"
+        >
+          <view class="news-tag" style="background: {{item.tint}}; color: {{item.color}};">{{item.tag}}</view>
+          <view class="news-body">
+            <view class="news-title">{{item.title}}</view>
+            <view class="news-meta">{{item.source}} · {{item.time}}</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- ============ 今日课表 ============ -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">今日安排</text>
+      <text class="section-more today-date">{{todayText}}</text>
+    </view>
+
+    <view class="card course-card">
+      <view
+        class="course"
+        wx:for="{{courseList}}"
+        wx:key="id"
+        data-name="{{item.name}}"
+        bindtap="onCourseTap"
+        hover-class="course--hover"
+        hover-stay-time="80"
+      >
+        <view class="course-time">
+          <text class="course-start">{{item.start}}</text>
+          <text class="course-end">{{item.end}}</text>
+        </view>
+        <view class="course-rail"></view>
+        <view class="course-body">
+          <view class="course-name">{{item.name}}</view>
+          <view class="course-meta">📍 {{item.loc}} · {{item.teacher}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-tip">— ilove财大 —</view>
+  <view class="page-bottom"></view>
+</view>

@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "校园资讯",
+  "navigationBarBackgroundColor": "#0FA97E",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#F4F8F7",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
+}

@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/schedule/schedule",
+    "pages/library/library",
+    "pages/mine/mine"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "我的课表",
+    "navigationBarBackgroundColor": "#0FA97E",
+    "backgroundColor": "#F4F8F7",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#9AA8B0",
+    "selectedColor": "#0FA97E",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/schedule/schedule",
+        "text": "课表"
+      },
+      {
+        "pagePath": "pages/library/library",
+        "text": "图书馆"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

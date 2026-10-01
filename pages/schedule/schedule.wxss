@@ -1,0 +1,319 @@
+/**pages/schedule/schedule.wxss**/
+
+.page {
+  min-height: 100vh;
+  background: #fff;
+}
+
+/* ============ 周次切换 ============ */
+.weekbar {
+  padding: 20rpx 24rpx;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.weekbar-btn {
+  flex: none;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--brand-softer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.weekbar-btn--hover {
+  background: #DDF3EA;
+}
+
+.weekbar-arrow {
+  margin-top: -6rpx;
+  font-size: 38rpx;
+  line-height: 1;
+  color: var(--brand);
+}
+
+.weekbar-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.weekbar-line {
+  display: flex;
+  align-items: center;
+}
+
+.weekbar-week {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.weekbar-badge {
+  height: 32rpx;
+  margin-left: 12rpx;
+  padding: 0 12rpx;
+  border-radius: 8rpx;
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-size: 20rpx;
+  line-height: 32rpx;
+}
+
+.weekbar-back {
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  color: var(--brand);
+}
+
+.weekbar-range {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--text-3);
+}
+
+/* ============ 星期表头（吸顶） ============ */
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.head-gutter {
+  flex: none;
+  width: 76rpx;
+  padding: 14rpx 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.head-gutter-text {
+  font-size: 20rpx;
+  color: var(--text-3);
+}
+
+.head-day {
+  flex: 1;
+  min-width: 0;
+  padding: 14rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.head-label {
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+
+.head-date {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: var(--text-3);
+}
+
+/* 今天：日期变成薄荷绿胶囊 */
+.head-day--today .head-label {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.head-day--today .head-date {
+  padding: 2rpx 10rpx;
+  border-radius: 16rpx;
+  background: var(--brand);
+  color: #fff;
+}
+
+/* ============ 课程网格 ============ */
+.grid {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* ---- 左侧节次列 ---- */
+.gutter {
+  flex: none;
+  width: 76rpx;
+}
+
+.gutter-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.gutter-idx {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: var(--text-2);
+  line-height: 1.2;
+}
+
+.gutter-time {
+  margin-top: 4rpx;
+  font-size: 16rpx;
+  color: #B7C2C8;
+  line-height: 1.2;
+  transform: scale(0.92);
+}
+
+/* ---- 每天的课程列 ---- */
+.col {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.col--today {
+  background: #F7FCFA;
+}
+
+.slot {
+  border-bottom: 1rpx solid var(--line);
+  border-left: 1rpx solid var(--line);
+}
+
+/* ---- 课程块 ---- */
+.block {
+  position: absolute;
+  left: 5rpx;
+  right: 5rpx;
+  padding: 10rpx 8rpx;
+  border-radius: 12rpx;
+  border-left: 6rpx solid transparent;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.block--hover {
+  opacity: 0.72;
+}
+
+.block-name {
+  font-size: 20rpx;
+  font-weight: 600;
+  line-height: 1.25;
+  word-break: break-all;
+}
+
+.block-room {
+  margin-top: 6rpx;
+  font-size: 17rpx;
+  line-height: 1.2;
+  opacity: 0.78;
+  word-break: break-all;
+}
+
+/* ============ 课程详情弹层 ============ */
+.mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 900;
+  background: rgba(16, 32, 28, 0.45);
+  animation: mask-in 0.2s ease;
+}
+
+.sheet {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 901;
+  padding: 20rpx 40rpx 0;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  animation: sheet-in 0.24s cubic-bezier(0.22, 0.68, 0.36, 1);
+}
+
+.sheet-bar {
+  width: 72rpx;
+  height: 8rpx;
+  margin: 0 auto 28rpx;
+  border-radius: 4rpx;
+  background: #E4EBE9;
+}
+
+.sheet-name {
+  font-size: 38rpx;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.sheet-list {
+  margin-top: 28rpx;
+}
+
+.sheet-row {
+  padding: 18rpx 0;
+  display: flex;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.sheet-k {
+  flex: none;
+  width: 120rpx;
+  font-size: 26rpx;
+  color: var(--text-3);
+}
+
+.sheet-v {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--text-1);
+}
+
+.sheet-btn {
+  height: 88rpx;
+  margin: 36rpx 0 24rpx;
+  border-radius: 44rpx;
+  background: var(--brand);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheet-btn--hover {
+  background: var(--brand-dark);
+}
+
+.sheet-safe {
+  height: env(safe-area-inset-bottom);
+}
+
+@keyframes mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

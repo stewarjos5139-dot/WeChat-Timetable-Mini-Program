@@ -1,0 +1,17 @@
+<!--custom-tab-bar/index.wxml-->
+<view class="bar">
+  <view class="bar-body">
+    <view
+      class="item {{selected === index ? 'item--on' : ''}}"
+      wx:for="{{list}}"
+      wx:key="pagePath"
+      data-index="{{index}}"
+      data-path="{{item.pagePath}}"
+      bindtap="onTap"
+    >
+      <text class="item-icon">{{item.icon}}</text>
+      <text class="item-text">{{item.text}}</text>
+    </view>
+  </view>
+  <view class="bar-safe"></view>
+</view>
