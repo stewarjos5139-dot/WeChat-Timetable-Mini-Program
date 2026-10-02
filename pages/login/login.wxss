@@ -1,0 +1,188 @@
+/**pages/login/login.wxss**/
+
+.page {
+  min-height: 100vh;
+}
+
+/* ============ 说明头 ============ */
+.hero {
+  padding: 40rpx 40rpx 56rpx;
+  background: linear-gradient(158deg, #19C493 0%, #0FA97E 55%, #0B8E6A 100%);
+  display: flex;
+  align-items: center;
+  border-radius: 0 0 40rpx 40rpx;
+}
+
+.hero-mark {
+  flex: none;
+  width: 96rpx;
+  height: 96rpx;
+  margin-right: 26rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+}
+
+.hero-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hero-sub {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* ============ 表单 ============ */
+.body {
+  /* 登录页不是 tab 页，底部不需要 tabBar 的留白，给个普通边距即可 */
+  padding: 0 32rpx 60rpx;
+}
+
+.form {
+  margin-top: -32rpx;
+  overflow: hidden;
+}
+
+.field {
+  padding: 28rpx 32rpx;
+  display: flex;
+  align-items: center;
+}
+
+.field-label {
+  flex: none;
+  width: 140rpx;
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+.field-input {
+  flex: 1;
+  min-width: 0;
+  height: 48rpx;
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+.ph {
+  color: #C2CDD2;
+  font-size: 28rpx;
+}
+
+.field-picker {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.picker-text {
+  font-size: 29rpx;
+  color: var(--text-2);
+}
+
+.picker-arrow {
+  margin-left: 10rpx;
+  font-size: 32rpx;
+  line-height: 1;
+  color: #C7D2D6;
+}
+
+/* 分割线跟输入框左边缘对齐 */
+.form .divide {
+  margin-left: 172rpx;
+}
+
+.form-hint {
+  margin-top: 20rpx;
+  padding: 0 12rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+/* ============ 提交按钮 ============ */
+.submit {
+  height: 92rpx;
+  margin-top: 44rpx;
+  border-radius: 46rpx;
+  background: var(--brand);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10rpx 26rpx rgba(15, 169, 126, 0.3);
+}
+
+.submit--hover {
+  background: var(--brand-dark);
+}
+
+/* 后端未就绪时压暗，但仍然可点 —— 点了会说明缺什么 */
+.submit--off {
+  background: #A9C4BB;
+  box-shadow: none;
+}
+
+/* ============ 提示 ============ */
+.notice {
+  margin-top: 32rpx;
+  padding: 28rpx 32rpx;
+  border-radius: var(--r-md);
+  background: #FFF8E1;
+  border-left: 8rpx solid #F0A93B;
+  display: flex;
+  flex-direction: column;
+}
+
+.notice-title {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #9A5B0A;
+}
+
+.notice-text {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #A8861B;
+}
+
+/* ============ 隐私说明 ============ */
+.privacy {
+  margin-top: 48rpx;
+  padding: 0 8rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.privacy-title {
+  font-size: 25rpx;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.privacy-item {
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: var(--text-3);
+}

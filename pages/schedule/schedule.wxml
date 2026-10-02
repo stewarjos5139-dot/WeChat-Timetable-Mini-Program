@@ -1,6 +1,22 @@
 <!--pages/schedule/schedule.wxml-->
 <view class="page">
 
+  <!-- ============ 未导入真实课表时的提示 ============ -->
+  <view
+    class="notice"
+    wx:if="{{isDemo}}"
+    bindtap="onImport"
+    hover-class="notice--hover"
+    hover-stay-time="60"
+  >
+    <text class="notice-icon">📥</text>
+    <view class="notice-body">
+      <text class="notice-title">当前是示例数据</text>
+      <text class="notice-sub">点击导入你的真实课表</text>
+    </view>
+    <text class="notice-arrow">›</text>
+  </view>
+
   <!-- ============ 周次切换 ============ -->
   <view class="weekbar">
     <view class="weekbar-btn" bindtap="onPrevWeek" hover-class="weekbar-btn--hover" hover-stay-time="60">
@@ -42,7 +58,8 @@
     <view class="gutter">
       <view class="gutter-cell" wx:for="{{sections}}" wx:key="i" style="height: {{rowH}}rpx;">
         <text class="gutter-idx">{{item.i}}</text>
-        <text class="gutter-time">{{item.from}}</text>
+        <!-- 节次起止时间暂缺；补进 SECTIONS 后这行会自动出现 -->
+        <text class="gutter-time" wx:if="{{item.from}}">{{item.from}}</text>
       </view>
     </view>
 
@@ -73,7 +90,8 @@
     </view>
   </view>
 
-  <view class="footer-tip">本周共 {{weekCourseCount}} 节课 · 点击方块查看详情</view>
+  <view class="footer-tip" wx:if="{{isDemo}}">示例数据 · 本周共 {{weekCourseCount}} 节 · 点击方块查看详情</view>
+  <view class="footer-tip" wx:else>{{termText}} · 本周共 {{weekCourseCount}} 节</view>
   <view class="tabbar-space"></view>
 </view>
 

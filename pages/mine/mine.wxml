@@ -9,24 +9,40 @@
         <text class="profile-name">未登录</text>
         <text class="profile-sub">登录后同步课表与借阅信息</text>
       </view>
-      <view class="profile-btn" bindtap="onLogin" hover-class="profile-btn--hover" hover-stay-time="60">登录</view>
+      <view class="profile-btn" bindtap="onImport" hover-class="profile-btn--hover" hover-stay-time="60">导入课表</view>
     </view>
 
-    <!-- 设置 -->
+    <!-- 课表 -->
     <view class="section">
       <view class="section-head">
-        <text class="section-title">设置</text>
+        <text class="section-title">课表</text>
       </view>
 
       <view class="card">
-        <view class="row" bindtap="onClearCache" hover-class="row--hover" hover-stay-time="60">
-          <text class="row-icon">🧹</text>
-          <text class="row-label">清除缓存</text>
+        <view class="row" bindtap="onImport" hover-class="row--hover" hover-stay-time="60">
+          <text class="row-icon">📥</text>
+          <text class="row-label">导入课表</text>
+          <text class="row-value">{{hasSchedule ? termText : '未导入'}}</text>
           <text class="row-arrow">›</text>
         </view>
 
         <view class="divide"></view>
 
+        <view class="row" bindtap="onClearSchedule" hover-class="row--hover" hover-stay-time="60">
+          <text class="row-icon">🗑️</text>
+          <text class="row-label">清除课表数据</text>
+          <text class="row-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 其他 -->
+    <view class="section">
+      <view class="section-head">
+        <text class="section-title">其他</text>
+      </view>
+
+      <view class="card">
         <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60">
           <text class="row-icon">ℹ️</text>
           <text class="row-label">关于 ilove财大</text>
@@ -34,6 +50,12 @@
           <text class="row-arrow">›</text>
         </view>
       </view>
+    </view>
+
+    <view class="privacy">
+      <text class="privacy-title">账号安全</text>
+      <text class="privacy-item">· 密码不会保存在本机，本机只记住学号</text>
+      <text class="privacy-item">· 导入时密码会经由中间层服务转发给学校教务系统</text>
     </view>
 
     <view class="footer-tip">— ilove财大 —</view>

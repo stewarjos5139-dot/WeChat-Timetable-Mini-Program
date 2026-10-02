@@ -1,0 +1,67 @@
+# ilove财大 中间层 —— nginx 反向代理配置示例
+#
+# 用法：
+#   1. 把 your-domain.com 全部换成你的域名
+#   2. 证书路径按实际改（下面按 certbot 的默认路径写的）
+#   3. 放到 /etc/nginx/conf.d/ilove-caida.conf
+#   4. nginx -t && systemctl reload nginx
+#
+# Node 进程只监听 127.0.0.1:3000，TLS 由这里接管。
+
+# ---------- 80：全量跳 HTTPS ----------
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com;
+
+    # certbot 续期校验必须走 http，别跟着跳走
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ---------- 443：对外接口 ----------
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name your-domain.com;
+
+    ssl_certificate     /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    # 微信小程序要求 TLS 1.2 以上
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+
+    # 教务系统偶尔很慢，给足超时（和 zfsoft.js 里的 20s 留出余量）
+    proxy_connect_timeout 10s;
+    proxy_send_timeout    60s;
+    proxy_read_timeout    60s;
+
+    # 这个接口只有几个短字段，收紧请求体上限
+    client_max_body_size 16k;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 除 /api/ 外一律拒绝 —— 这个服务不提供别的路径
+    location / {
+        return 404;
+    }
+}

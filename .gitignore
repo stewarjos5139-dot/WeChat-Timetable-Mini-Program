@@ -1,0 +1,25 @@
+# ── 依赖 ──
+node_modules/
+
+# ── 微信开发者工具的本地私有配置（含个人偏好，不该进仓库）──
+project.private.config.json
+miniprogram_npm/
+
+# ── 密钥、凭据 ──
+.env
+*.pem
+*.key
+**/.local.json
+
+# ── 调试中间产物（server/_kebiao.html 等）──
+server/_*
+
+# ── 抓包参考件 ──
+# 含个人课表数据（姓名、课程），以及正方软件的 JS/CSS（第三方版权物）。
+# 这些是开发时查协议用的，删了也不影响项目运行。
+参考/
+
+# ── 系统垃圾 ──
+.DS_Store
+Thumbs.db
+*.log

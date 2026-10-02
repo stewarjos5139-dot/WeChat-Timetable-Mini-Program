@@ -1,0 +1,36 @@
+[Unit]
+Description=ilove财大 中间层服务（正方教务系统代理）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ilove
+Group=ilove
+WorkingDirectory=/opt/ilove-caida/server
+ExecStart=/usr/bin/node index.js
+
+Restart=always
+RestartSec=5
+
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+
+# 日志进 journald，用 journalctl -u ilove-caida 看
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ilove-caida
+
+# ---- 权限收紧 ----
+# 这个进程只需要发网络请求、读自己的代码，别的都不需要
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

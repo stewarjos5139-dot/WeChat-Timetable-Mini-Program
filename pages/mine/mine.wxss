@@ -119,3 +119,29 @@
   line-height: 1;
   color: #C7D2D6;
 }
+
+/* 分割线与文字左边缘对齐（内边距 32rpx + 图标宽 52rpx） */
+.divide {
+  margin-left: 84rpx;
+}
+
+/* ============ 账号安全说明 ============ */
+.privacy {
+  margin-top: 40rpx;
+  padding: 0 8rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.privacy-title {
+  font-size: 25rpx;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.privacy-item {
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: var(--text-3);
+}

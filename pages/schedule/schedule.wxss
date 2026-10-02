@@ -5,6 +5,51 @@
   background: #fff;
 }
 
+/* ============ 示例数据提示条 ============ */
+.notice {
+  padding: 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+  background: #FFF8E1;
+  border-bottom: 1rpx solid #F5E4BC;
+}
+
+.notice--hover {
+  background: #FBF0D2;
+}
+
+.notice-icon {
+  flex: none;
+  margin-right: 20rpx;
+  font-size: 34rpx;
+}
+
+.notice-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.notice-title {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #9A5B0A;
+}
+
+.notice-sub {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #B0821F;
+}
+
+.notice-arrow {
+  flex: none;
+  font-size: 34rpx;
+  line-height: 1;
+  color: #C9A96A;
+}
+
 /* ============ 周次切换 ============ */
 .weekbar {
   padding: 20rpx 24rpx;

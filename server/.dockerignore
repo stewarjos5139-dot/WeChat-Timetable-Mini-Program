@@ -1,0 +1,14 @@
+# 依赖在镜像里重新装，不要把本地的打进去（平台可能不一致）
+node_modules
+npm-debug.log
+
+# 自建方案的文件，云托管用不上
+deploy/
+
+# 调试时 dump 的页面（含个人课表数据）
+_kebiao.html
+
+# 文档和版本控制元数据
+*.md
+.git
+.gitignore
