@@ -6,10 +6,11 @@ const CLOSE_HOUR = 22
 
 /** 规划中的功能，暂不实现 */
 const FEATURES = [
-  { icon: '🔍', name: '座位预约', desc: '查看自习室空位并预约', tint: '#E6F7F1' },
-  { icon: '📚', name: '借阅查询', desc: '在借图书与到期提醒', tint: '#E8F1FE' },
-  { icon: '🏛️', name: '研讨间预约', desc: '预约小组讨论空间', tint: '#FFF3E4' },
-  { icon: '🔔', name: '到馆提醒', desc: '心仪座位空出时通知我', tint: '#F1EDFE' }
+  // icon 对应 /assets/icons/<icon>.svg
+  { icon: 'seat', name: '座位预约', desc: '查看自习室空位并预约' },
+  { icon: 'book', name: '借阅查询', desc: '在借图书与到期提醒' },
+  { icon: 'room', name: '研讨间预约', desc: '预约小组讨论空间' },
+  { icon: 'bell', name: '到馆提醒', desc: '心仪座位空出时通知我' }
 ]
 
 Page({

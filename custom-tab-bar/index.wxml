@@ -1,5 +1,5 @@
 <!--custom-tab-bar/index.wxml-->
-<view class="bar">
+<view class="bar {{hidden ? 'bar--hidden' : ''}}">
   <view class="bar-body">
     <view
       class="item {{selected === index ? 'item--on' : ''}}"
@@ -8,8 +8,15 @@
       data-index="{{index}}"
       data-path="{{item.pagePath}}"
       bindtap="onTap"
+      aria-role="tab"
+      aria-label="{{item.text}}"
+      aria-selected="{{selected === index}}"
     >
-      <text class="item-icon">{{item.icon}}</text>
+      <image
+        class="item-icon"
+        src="/assets/icons/{{item.icon}}{{selected === index ? '-on' : ''}}.svg"
+        mode="aspectFit"
+      />
       <text class="item-text">{{item.text}}</text>
     </view>
   </view>

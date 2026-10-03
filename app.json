@@ -6,16 +6,16 @@
     "pages/login/login"
   ],
   "window": {
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "我的课表",
-    "navigationBarBackgroundColor": "#0FA97E",
-    "backgroundColor": "#F4F8F7",
+    "navigationBarBackgroundColor": "#F6F5F2",
+    "backgroundColor": "#F6F5F2",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#9AA8B0",
-    "selectedColor": "#0FA97E",
+    "color": "#86868B",
+    "selectedColor": "#2F4A8A",
     "backgroundColor": "#ffffff",
     "list": [
       {

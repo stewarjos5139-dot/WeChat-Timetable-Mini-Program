@@ -5,108 +5,93 @@
 }
 
 .pad {
-  padding: 24rpx 32rpx 0;
+  padding: 16rpx 32rpx 0;
 }
 
 /* ============ 开馆状态卡 ============ */
-.hero {
-  position: relative;
-  padding: 40rpx 36rpx 44rpx;
-  border-radius: var(--r-lg);
-  background: linear-gradient(150deg, #19C493 0%, #0FA97E 55%, #0B8E6A 100%);
-  box-shadow: 0 12rpx 32rpx rgba(15, 169, 126, 0.24);
-  overflow: hidden;
+.status {
+  padding: 32rpx 36rpx 36rpx;
 }
 
-.hero::after {
-  content: '';
-  position: absolute;
-  top: -120rpx;
-  right: -100rpx;
-  width: 340rpx;
-  height: 340rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.hero-top {
-  position: relative;
-  z-index: 1;
+.status-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.hero-title {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 1rpx;
+.status-label {
+  font-size: 24rpx;
+  color: var(--text-2);
 }
 
-.hero-status {
-  height: 44rpx;
-  padding: 0 18rpx;
-  border-radius: 22rpx;
-  background: rgba(255, 255, 255, 0.22);
+.status-hours {
+  height: 40rpx;
+  padding: 0 14rpx;
+  border-radius: 8rpx;
+  background: var(--fill);
+  font-size: 22rpx;
+  line-height: 40rpx;
+  color: var(--text-2);
+}
+
+.status-main {
+  margin-top: 28rpx;
   display: flex;
   align-items: center;
-  font-size: 22rpx;
-  color: #fff;
 }
 
-.hero-dot {
-  width: 12rpx;
-  height: 12rpx;
-  margin-right: 10rpx;
+/* 开馆/闭馆是语义指示色，不用强调色 */
+.status-dot {
+  width: 18rpx;
+  height: 18rpx;
+  margin-right: 16rpx;
   border-radius: 50%;
-  background: #B9F5E1;
 }
 
-.hero-status--off .hero-dot {
-  background: #FFD2D2;
+.status-dot--on {
+  background: var(--ok);
 }
 
-.hero-hours {
-  position: relative;
-  z-index: 1;
+.status-dot--off {
+  background: var(--text-3);
+}
+
+.status-text {
+  font-size: 52rpx;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-1);
+}
+
+.status-note {
   display: block;
-  margin-top: 28rpx;
-  font-size: 30rpx;
-  font-weight: 500;
-  color: #fff;
-}
-
-.hero-note {
-  position: relative;
-  z-index: 1;
-  display: block;
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.78);
+  margin-top: 10rpx;
+  padding-left: 34rpx; /* 与上方文字左对齐（圆点 18 + 间距 16） */
+  font-size: 25rpx;
+  color: var(--text-2);
 }
 
 /* ============ 功能列表 ============ */
 .feat {
-  padding: 28rpx 32rpx;
-  display: flex;
-  align-items: center;
-}
-
-.feat--hover {
-  background: #F7FAF9;
+  padding-top: 24rpx;
+  padding-bottom: 24rpx;
 }
 
 .feat-icon {
   flex: none;
-  width: 76rpx;
-  height: 76rpx;
+  width: 72rpx;
+  height: 72rpx;
   margin-right: 24rpx;
-  border-radius: 22rpx;
+  border-radius: var(--r-md);
+  background: var(--fill);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34rpx;
+}
+
+.feat-icon-img {
+  width: 40rpx;
+  height: 40rpx;
 }
 
 .feat-body {
@@ -123,7 +108,7 @@
 }
 
 .feat-desc {
-  margin-top: 6rpx;
+  margin-top: 4rpx;
   font-size: 23rpx;
   color: var(--text-3);
 }
@@ -131,15 +116,16 @@
 .feat-tag {
   flex: none;
   height: 36rpx;
-  padding: 0 14rpx;
+  margin-left: 16rpx;
+  padding: 0 12rpx;
   border-radius: 8rpx;
-  background: #F2F5F6;
+  border: 1rpx solid var(--line);
   color: var(--text-3);
   font-size: 20rpx;
-  line-height: 36rpx;
+  line-height: 34rpx;
 }
 
-/* 分割线与图标右侧对齐 */
-.divide {
-  margin-left: 132rpx;
+/* 分割线与文字左边缘对齐（内边距 28 + 图标 72 + 间距 24） */
+.feat-divide {
+  margin-left: 124rpx;
 }

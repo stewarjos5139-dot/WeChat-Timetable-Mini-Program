@@ -3,13 +3,21 @@
   <view class="pad">
 
     <!-- 用户信息 -->
-    <view class="profile">
-      <view class="avatar">👤</view>
+    <view class="card profile">
+      <view class="avatar">
+        <image class="avatar-img" src="/assets/icons/tab-mine.svg" mode="aspectFit" />
+      </view>
       <view class="profile-body">
         <text class="profile-name">未登录</text>
-        <text class="profile-sub">登录后同步课表与借阅信息</text>
+        <text class="profile-sub">导入课表后自动同步</text>
       </view>
-      <view class="profile-btn" bindtap="onImport" hover-class="profile-btn--hover" hover-stay-time="60">导入课表</view>
+      <view
+        class="profile-btn"
+        bindtap="onImport"
+        hover-class="profile-btn--hover"
+        hover-stay-time="60"
+        aria-role="button"
+      >导入课表</view>
     </view>
 
     <!-- 课表 -->
@@ -19,19 +27,19 @@
       </view>
 
       <view class="card">
-        <view class="row" bindtap="onImport" hover-class="row--hover" hover-stay-time="60">
-          <text class="row-icon">📥</text>
+        <view class="row" bindtap="onImport" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+          <image class="row-icon" src="/assets/icons/import.svg" mode="aspectFit" />
           <text class="row-label">导入课表</text>
           <text class="row-value">{{hasSchedule ? termText : '未导入'}}</text>
-          <text class="row-arrow">›</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
         </view>
 
         <view class="divide"></view>
 
-        <view class="row" bindtap="onClearSchedule" hover-class="row--hover" hover-stay-time="60">
-          <text class="row-icon">🗑️</text>
-          <text class="row-label">清除课表数据</text>
-          <text class="row-arrow">›</text>
+        <view class="row" bindtap="onClearSchedule" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+          <image class="row-icon" src="/assets/icons/trash.svg" mode="aspectFit" />
+          <text class="row-label row-label--danger">清除课表数据</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
         </view>
       </view>
     </view>
@@ -43,22 +51,25 @@
       </view>
 
       <view class="card">
-        <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60">
-          <text class="row-icon">ℹ️</text>
+        <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+          <image class="row-icon" src="/assets/icons/info.svg" mode="aspectFit" />
           <text class="row-label">关于 ilove财大</text>
-          <text class="row-value">v{{version}}</text>
-          <text class="row-arrow">›</text>
+          <text class="row-value num">v{{version}}</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
         </view>
       </view>
     </view>
 
     <view class="privacy">
-      <text class="privacy-title">账号安全</text>
+      <view class="privacy-head">
+        <image class="privacy-icon" src="/assets/icons/lock.svg" mode="aspectFit" />
+        <text class="privacy-title">账号安全</text>
+      </view>
       <text class="privacy-item">· 密码不会保存在本机，本机只记住学号</text>
       <text class="privacy-item">· 导入时密码会经由中间层服务转发给学校教务系统</text>
     </view>
 
-    <view class="footer-tip">— ilove财大 —</view>
+    <view class="footer-tip">ilove财大</view>
   </view>
 
   <view class="tabbar-space"></view>

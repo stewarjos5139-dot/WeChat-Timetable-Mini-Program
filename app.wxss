@@ -1,31 +1,58 @@
-/**app.wxss —— 全局设计系统：清新活力风**/
+/**app.wxss —— 全局设计系统：纸本课表**/
+
+/*
+ * 设计原则：
+ *   1. 界面本身克制 —— 暖灰白底 + 白卡片 + 发丝线，不用阴影、渐变、玻璃。
+ *   2. 只有一个强调色（墨蓝），只出现在选中态、主按钮、「今天」标记。
+ *   3. 颜色交给课程块去表达（8 组莫兰迪色，见 .tone0 ~ .tone7）。
+ * 改主题只改这里。
+ */
 
 page {
-  /* 主色 */
-  --brand: #0FA97E;
-  --brand-dark: #0A8763;
-  --brand-soft: #E6F7F1;
-  --brand-softer: #F2FAF7;
+  /* ---------- 强调色 ---------- */
+  --accent: #2f4a8a;       /* 白字对比度约 8.5:1 */
+  --accent-press: #253b6f; /* 按下态 */
+  --accent-soft: #eaeef6;  /* 浅底：今天那一列、标签 */
 
-  /* 文本层级 */
-  --text-1: #1A2B32;
-  --text-2: #6B7B85;
-  --text-3: #9AA8B0;
+  /* ---------- 文本 ----------
+   * text-3 在页面底色上约 3.3:1，只用于辅助信息，不承载正文 */
+  --text-1: #1c1c1e;
+  --text-2: #6b6b70;
+  --text-3: #86868b;
 
-  /* 背景与线条 */
-  --bg: #F4F8F7;
-  --card: #FFFFFF;
-  --line: #EEF3F2;
+  /* ---------- 底色与线条 ---------- */
+  --bg: #f6f5f2;
+  --card: #ffffff;
+  --line: #e8e6e1;       /* 发丝线：卡片描边、分隔线 */
+  --line-soft: #efede9;  /* 课表网格横线，比 --line 再淡一档 */
+  --hover-bg: #f3f2ee;   /* 列表项按下态 */
+  --fill: #f1f0ec;       /* 中性灰块：图标底、按钮底 */
 
-  /* 圆角 */
-  --r-sm: 12rpx;
-  --r-md: 20rpx;
-  --r-lg: 28rpx;
-  --r-xl: 36rpx;
+  /* ---------- 语义色 ---------- */
+  --danger: #b3402f;
+  --ok: #3f7d58;
+  --warn-bg: #fbf5e8;
+  --warn-line: #ecdcb8;
+  --warn-text: #7a5512;
 
-  /* 阴影 */
-  --shadow-card: 0 6rpx 24rpx rgba(15, 169, 126, 0.07);
-  --shadow-float: 0 12rpx 40rpx rgba(15, 169, 126, 0.14);
+  /* ---------- 圆角：只有两档 ---------- */
+  --r-md: 16rpx;
+  --r-lg: 24rpx;
+  --r-full: 999rpx; /* 只给标签和圆形按钮 */
+
+  /* ---------- 层级刻度 ----------
+   * 注意：自定义 tabBar 在页面之上的独立层，页面里的 z-index 盖不住它。
+   * 底部弹层出现时由页面把 tabBar 滑走（schedule.js 的 setTabBarHidden）。 */
+  --z-head: 10;
+  --z-tabbar: 200;
+  --z-mask: 300;
+  --z-sheet: 310;
+  --z-mask-top: 320;  /* 叠在弹层之上的第二层（如编辑课程里的周次选择） */
+  --z-sheet-top: 330;
+
+  /* ---------- 动效 ---------- */
+  --dur: 0.16s;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
 
   background: var(--bg);
   color: var(--text-1);
@@ -41,59 +68,168 @@ scroll-view {
   box-sizing: border-box;
 }
 
-/* ---------- 通用卡片 ---------- */
-.card {
-  background: var(--card);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-card);
+/* 数字用等宽字形：周次、日期、节次切换时不抖 */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }
 
-/* ---------- 区块标题 ---------- */
+/* ---------- 卡片 ---------- */
+.card {
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+/* ---------- 区块标题：小号灰字，像设置页的分组名 ---------- */
 .section {
-  margin-top: 44rpx;
+  margin-top: 48rpx;
 }
 
 .section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 0 8rpx 20rpx;
+  padding: 0 8rpx 16rpx;
 }
 
 .section-title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: var(--text-1);
-  letter-spacing: 0.5rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: var(--text-2);
+  letter-spacing: 2rpx;
 }
 
-.section-more {
-  font-size: 24rpx;
+/* ---------- 列表行（mine / library 共用） ---------- */
+.row {
+  min-height: 104rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.row--hover {
+  background: var(--hover-bg);
+}
+
+.row-icon {
+  flex: none;
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 24rpx;
+}
+
+.row-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+.row-value {
+  flex: none;
+  margin-left: 16rpx;
+  font-size: 25rpx;
   color: var(--text-3);
 }
 
-.section-more::after {
-  content: ' ›';
-  font-size: 28rpx;
+.row-arrow {
+  flex: none;
+  width: 28rpx;
+  height: 28rpx;
+  margin-left: 8rpx;
 }
 
-/* ---------- 列表项分割线 ---------- */
+/* 分隔线从文字左边缘开始（内边距 28 + 图标 40 + 间距 24） */
 .divide {
   height: 1rpx;
+  margin-left: 92rpx;
   background: var(--line);
-  margin-left: 32rpx;
 }
 
-/* ---------- 自定义 tabBar 占位 ---------- */
-/* 自定义 tabBar 是悬浮层，不会自动压缩页面高度，需要在内容末尾手动留白 */
-.tabbar-space {
-  height: calc(140rpx + env(safe-area-inset-bottom));
+/* ---------- 主按钮 ---------- */
+.btn {
+  height: 92rpx;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur) var(--ease), background-color var(--dur) var(--ease);
 }
 
+.btn--hover {
+  background: var(--accent-press);
+  transform: scale(0.985);
+}
+
+/* 次按钮：浅底墨蓝字，和主按钮并排时不抢主次 */
+.btn--ghost {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.btn--ghost-hover {
+  background: #dde3ef;
+  transform: scale(0.985);
+}
+
+/* ---------- 安全说明（login / mine 共用） ---------- */
+.privacy {
+  margin-top: 48rpx;
+  padding: 0 8rpx;
+}
+
+.privacy-head {
+  display: flex;
+  align-items: center;
+}
+
+.privacy-icon {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 10rpx;
+}
+
+.privacy-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.privacy-item {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  line-height: 1.65;
+  color: var(--text-3);
+}
+
+/* ---------- 课程配色：7 组莫兰迪色 ----------
+ * 每组三个值：浅底 / 左侧色条 / 深色文字（文字在浅底上均 ≥ 4.5:1）。
+ * 课表方块和详情弹层共用同一组类，保证同一门课颜色对得上。
+ * 组数要与 utils/parser.js 和 pages/schedule/schedule.js 的 COLOR_COUNT 一致。 */
+.tone0 { --tone-bg: #e7eee6; --tone-bar: #8fae95; --tone-fg: #3a5641; }
+.tone1 { --tone-bg: #e4eaf1; --tone-bar: #8aa2c0; --tone-fg: #364e6b; }
+.tone2 { --tone-bg: #edeedd; --tone-bar: #b5b57a; --tone-fg: #565a2a; }
+.tone3 { --tone-bg: #f3e6e4; --tone-bar: #c99590; --tone-fg: #7a3f3a; }
+.tone4 { --tone-bg: #ece8f2; --tone-bar: #a89bc6; --tone-fg: #4f4470; }
+.tone5 { --tone-bg: #e2edec; --tone-bar: #7faea9; --tone-fg: #2f5a57; }
+.tone6 { --tone-bg: #f3e9d8; --tone-bar: #d0a86a; --tone-fg: #6e4e1e; }
+
+/* ---------- 页脚 ---------- */
 .footer-tip {
+  padding: 40rpx 0 0;
   text-align: center;
   font-size: 22rpx;
   color: var(--text-3);
-  padding: 48rpx 0 0;
   letter-spacing: 1rpx;
+}
+
+/* 自定义 tabBar 是悬浮层，tab 页内容末尾要手动留白（非 tab 页不要加） */
+.tabbar-space {
+  height: calc(140rpx + env(safe-area-inset-bottom));
 }

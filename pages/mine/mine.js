@@ -47,7 +47,7 @@ Page({
       title: '清除课表数据',
       content: '会删除本机已导入的课表，不影响学校教务系统的数据。',
       confirmText: '清除',
-      confirmColor: '#E4572E',
+      confirmColor: '#B3402F',
       success(res) {
         if (!res.confirm) return
         store.clearCourses()
@@ -63,7 +63,7 @@ Page({
       content: '版本 ' + VERSION + '\n一个校园课表小程序\n\n登录后账号密码仅用于向学校教务系统发起查询，密码不会保存在本机。',
       showCancel: false,
       confirmText: '知道了',
-      confirmColor: '#0FA97E'
+      confirmColor: '#2F4A8A'
     })
   }
 })

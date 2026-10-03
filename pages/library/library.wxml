@@ -3,17 +3,18 @@
   <view class="pad">
 
     <!-- 开馆状态 -->
-    <view class="hero">
-      <view class="hero-top">
-        <text class="hero-title">图书馆</text>
-        <view class="hero-status {{openNow ? 'hero-status--on' : 'hero-status--off'}}">
-          <view class="hero-dot"></view>
-          <text>{{openNow ? '开放中' : '已闭馆'}}</text>
-        </view>
+    <view class="card status">
+      <view class="status-top">
+        <text class="status-label">图书馆 · 今日</text>
+        <text class="status-hours num">{{todayHours}}</text>
       </view>
 
-      <text class="hero-hours">今日开放 {{todayHours}}</text>
-      <text class="hero-note">{{statusNote}}</text>
+      <view class="status-main">
+        <view class="status-dot {{openNow ? 'status-dot--on' : 'status-dot--off'}}"></view>
+        <text class="status-text">{{openNow ? '开放中' : '已闭馆'}}</text>
+      </view>
+
+      <text class="status-note">{{statusNote}}</text>
     </view>
 
     <!-- 规划中的功能 -->
@@ -24,15 +25,18 @@
 
       <view class="card">
         <block wx:for="{{features}}" wx:key="name">
-          <view class="divide" wx:if="{{index > 0}}"></view>
+          <view class="divide feat-divide" wx:if="{{index > 0}}"></view>
           <view
-            class="feat"
+            class="row feat"
             data-name="{{item.name}}"
             bindtap="onFeatureTap"
-            hover-class="feat--hover"
+            hover-class="row--hover"
             hover-stay-time="60"
+            aria-role="button"
           >
-            <view class="feat-icon" style="background: {{item.tint}};">{{item.icon}}</view>
+            <view class="feat-icon">
+              <image class="feat-icon-img" src="/assets/icons/{{item.icon}}.svg" mode="aspectFit" />
+            </view>
             <view class="feat-body">
               <text class="feat-name">{{item.name}}</text>
               <text class="feat-desc">{{item.desc}}</text>
@@ -43,7 +47,7 @@
       </view>
     </view>
 
-    <view class="footer-tip">— 数据接入后开放 —</view>
+    <view class="footer-tip">数据接入后开放</view>
   </view>
 
   <view class="tabbar-space"></view>

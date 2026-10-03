@@ -79,13 +79,30 @@ Page({
       return
     }
 
-    this.setData({ loading: true })
-    this.doImport({
+    const params = {
       studentId: studentId,
       password: password,
       xnm: this.data.yearOptions[this.data.yearIndex].value,
       xqm: this.data.termOptions[this.data.termIndex].value,
       startDate: this.data.startDate
+    }
+
+    const start = () => {
+      this.setData({ loading: true })
+      this.doImport(params)
+    }
+
+    // 重新导入会整体覆盖现有课表（包括手动添加和编辑过的课程），先确认
+    if (store.getCourses().length === 0) {
+      start()
+      return
+    }
+    wx.showModal({
+      title: '覆盖现有课表？',
+      content: '重新导入会用教务系统的数据替换当前全部课程，你手动添加和编辑过的课程也会被覆盖。',
+      confirmText: '继续导入',
+      confirmColor: '#B3402F',
+      success: res => { if (res.confirm) start() }
     })
   },
 
@@ -129,7 +146,7 @@ Page({
           content: (err && err.message) || '未知错误',
           showCancel: false,
           confirmText: '知道了',
-          confirmColor: '#0FA97E'
+          confirmColor: '#2F4A8A'
         })
       })
   },
@@ -140,7 +157,7 @@ Page({
       content: '导入课表需要先连上中间层服务。\n\n请在 utils/config.js 里填上云托管的环境 ID 和服务名，或自建服务的地址。步骤见 server/deploy/cloud-hosting.md。',
       showCancel: false,
       confirmText: '知道了',
-      confirmColor: '#0FA97E'
+      confirmColor: '#2F4A8A'
     })
   }
 })

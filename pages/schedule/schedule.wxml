@@ -1,106 +1,195 @@
 <!--pages/schedule/schedule.wxml-->
 <view class="page">
 
-  <!-- ============ 未导入真实课表时的提示 ============ -->
-  <view
-    class="notice"
-    wx:if="{{isDemo}}"
-    bindtap="onImport"
-    hover-class="notice--hover"
-    hover-stay-time="60"
-  >
-    <text class="notice-icon">📥</text>
-    <view class="notice-body">
-      <text class="notice-title">当前是示例数据</text>
-      <text class="notice-sub">点击导入你的真实课表</text>
-    </view>
-    <text class="notice-arrow">›</text>
-  </view>
-
   <!-- ============ 周次切换 ============ -->
   <view class="weekbar">
-    <view class="weekbar-btn" bindtap="onPrevWeek" hover-class="weekbar-btn--hover" hover-stay-time="60">
-      <text class="weekbar-arrow">‹</text>
-    </view>
-
-    <view class="weekbar-center" bindtap="onToday">
+    <view class="weekbar-info" bindtap="onToday">
       <view class="weekbar-line">
-        <text class="weekbar-week">第 {{week}} 周</text>
-        <text class="weekbar-badge" wx:if="{{week === thisWeek}}">本周</text>
-        <text class="weekbar-back" wx:else>回到本周</text>
+        <text class="weekbar-week num">第 {{week}} 周</text>
+        <text class="weekbar-tag" wx:if="{{week === thisWeek}}">本周</text>
       </view>
-      <text class="weekbar-range">{{weekRangeText}}</text>
+      <text class="weekbar-range num">{{weekRangeText}}</text>
     </view>
 
-    <view class="weekbar-btn" bindtap="onNextWeek" hover-class="weekbar-btn--hover" hover-stay-time="60">
-      <text class="weekbar-arrow">›</text>
+    <view class="weekbar-actions">
+      <view
+        class="weekbar-today"
+        wx:if="{{week !== thisWeek}}"
+        bindtap="onToday"
+        hover-class="press"
+        hover-stay-time="60"
+        aria-role="button"
+      >回本周</view>
+      <view
+        class="weekbar-btn"
+        bindtap="onPrevWeek"
+        hover-class="press"
+        hover-stay-time="60"
+        aria-role="button"
+        aria-label="上一周"
+      >
+        <image class="weekbar-arrow weekbar-arrow--prev" src="/assets/icons/arrow.svg" mode="aspectFit" />
+      </view>
+      <view
+        class="weekbar-btn"
+        bindtap="onNextWeek"
+        hover-class="press"
+        hover-stay-time="60"
+        aria-role="button"
+        aria-label="下一周"
+      >
+        <image class="weekbar-arrow" src="/assets/icons/arrow.svg" mode="aspectFit" />
+      </view>
     </view>
   </view>
 
   <!-- ============ 星期表头（吸顶） ============ -->
   <view class="head">
-    <view class="head-gutter">
-      <text class="head-gutter-text">节次</text>
-    </view>
+    <view class="head-gutter"></view>
     <view
       class="head-day {{item.isToday ? 'head-day--today' : ''}}"
-      wx:for="{{days}}"
+      wx:for="{{head}}"
       wx:key="day"
     >
       <text class="head-label">{{item.label}}</text>
-      <text class="head-date">{{item.date}}</text>
+      <text class="head-date num">{{item.dayNum}}</text>
     </view>
   </view>
 
   <!-- ============ 课程网格 ============ -->
-  <view class="grid">
-    <!-- 左侧节次列 -->
+  <!-- 引导弹窗出现时只虚化网格，周次栏和星期表头保持清晰 -->
+  <view class="grid {{showGuide ? 'grid--blur' : ''}}">
+    <!-- 左侧节次列：固定不动，只有右边的 7 天跟着滑 -->
     <view class="gutter">
       <view class="gutter-cell" wx:for="{{sections}}" wx:key="i" style="height: {{rowH}}rpx;">
-        <text class="gutter-idx">{{item.i}}</text>
+        <text class="gutter-idx num">{{item.i}}</text>
         <!-- 节次起止时间暂缺；补进 SECTIONS 后这行会自动出现 -->
-        <text class="gutter-time" wx:if="{{item.from}}">{{item.from}}</text>
+        <text class="gutter-time num" wx:if="{{item.from}}">{{item.from}}</text>
       </view>
     </view>
 
-    <!-- 7 天课程列 -->
-    <view
-      class="col {{item.isToday ? 'col--today' : ''}}"
-      wx:for="{{days}}"
-      wx:key="day"
+    <!-- 左右滑动切换周：每周一页，只有当前周 ±1 装了课程 -->
+    <swiper
+      class="swiper"
+      style="height: {{gridH}}rpx;"
+      current="{{current}}"
+      duration="280"
+      bindchange="onSwiperChange"
     >
-      <!-- 背景格子，撑开高度并画出横线 -->
-      <view class="slot" wx:for="{{sections}}" wx:for-item="s" wx:key="i" style="height: {{rowH}}rpx;"></view>
+      <swiper-item wx:for="{{weeks}}" wx:for-item="w" wx:key="week">
+        <view class="week" wx:if="{{w.loaded}}">
+          <view
+            class="col {{col.isToday ? 'col--today' : ''}}"
+            wx:for="{{w.cols}}"
+            wx:for-item="col"
+            wx:key="day"
+          >
+            <!-- 背景格子：画横线，同时接收空白处的点击 -->
+            <view
+              class="slot"
+              wx:for="{{sections}}"
+              wx:for-item="s"
+              wx:key="i"
+              style="height: {{rowH}}rpx;"
+              data-day="{{col.day}}"
+              data-start="{{s.i}}"
+              bindtap="onSlotTap"
+            ></view>
 
-      <!-- 课程块，绝对定位浮在格子上方 -->
-      <view
-        class="block"
-        wx:for="{{item.courses}}"
-        wx:for-item="c"
-        wx:key="id"
-        style="{{c.style}}"
-        data-id="{{c.id}}"
-        bindtap="onCourseTap"
-        hover-class="block--hover"
-        hover-stay-time="60"
-      >
-        <text class="block-name">{{c.name}}</text>
-        <text class="block-room">{{c.room}}</text>
-      </view>
-    </view>
+            <!-- 点空白格后出现的「＋」 -->
+            <view
+              class="plus"
+              wx:if="{{plus && w.week === week && plus.day === col.day}}"
+              style="{{plus.style}}"
+              catchtap="onPlusTap"
+              aria-role="button"
+              aria-label="在这里添加课程"
+            >
+              <image class="plus-icon" src="/assets/icons/plus.svg" mode="aspectFit" />
+            </view>
+
+            <!-- 课程块，绝对定位浮在格子上方 -->
+            <view
+              class="block tone{{c.color}}"
+              wx:for="{{col.courses}}"
+              wx:for-item="c"
+              wx:key="id"
+              style="{{c.style}}"
+              data-id="{{c.id}}"
+              catchtap="onCourseTap"
+              hover-class="block--hover"
+              hover-stay-time="60"
+              aria-role="button"
+              aria-label="{{c.name}} {{c.room}}"
+            >
+              <text class="block-name">{{c.name}}</text>
+              <text class="block-room">{{c.room}}</text>
+            </view>
+          </view>
+        </view>
+        <!-- 未装载的周只画网格线，滑过去之前就会被装上 -->
+        <view class="week week--blank" wx:else></view>
+      </swiper-item>
+    </swiper>
   </view>
 
-  <view class="footer-tip" wx:if="{{isDemo}}">示例数据 · 本周共 {{weekCourseCount}} 节 · 点击方块查看详情</view>
-  <view class="footer-tip" wx:else>{{termText}} · 本周共 {{weekCourseCount}} 节</view>
+  <view class="footer-tip" wx:if="{{!isEmpty}}">{{termText}} · 本周 {{weekCourseCount}} 节课</view>
   <view class="tabbar-space"></view>
+</view>
+
+<!-- ============ 空课表引导：问用户要不要导入 ============
+     白色遮罩拦住所有触摸（课表不能滑、不能点），tabBar 层级更高，照常可用 -->
+<view
+  class="guide {{guideLeaving ? 'guide--leaving' : ''}}"
+  wx:if="{{showGuide}}"
+  catchtouchmove="noop"
+  catchtap="noop"
+>
+  <view class="guide-card" aria-role="dialog" aria-label="导入课表">
+    <view
+      class="guide-close"
+      catchtap="onCloseGuide"
+      hover-class="guide-close--hover"
+      hover-stay-time="60"
+      aria-role="button"
+      aria-label="关闭"
+    >
+      <image class="guide-close-icon" src="/assets/icons/close.svg" mode="aspectFit" />
+    </view>
+
+    <view class="guide-icon">
+      <image class="guide-icon-img" src="/assets/icons/import-accent.svg" mode="aspectFit" />
+    </view>
+    <text class="guide-title">要导入课表吗？</text>
+    <text class="guide-desc">可以从学校教务系统一键导入本学期课表，也可以稍后自己逐节添加</text>
+
+    <view
+      class="btn guide-btn"
+      catchtap="onImport"
+      hover-class="btn--hover"
+      hover-stay-time="60"
+      aria-role="button"
+    >从教务系统导入</view>
+    <view
+      class="guide-skip"
+      catchtap="onCloseGuide"
+      hover-class="guide-skip--hover"
+      hover-stay-time="60"
+      aria-role="button"
+    >先不用，我手动添加</view>
+  </view>
 </view>
 
 <!-- ============ 课程详情弹层 ============ -->
 <view class="mask" wx:if="{{showDetail}}" bindtap="onCloseDetail" catchtouchmove="noop"></view>
 
-<view class="sheet" wx:if="{{showDetail}}">
+<view class="sheet" wx:if="{{showDetail}}" aria-role="dialog">
   <view class="sheet-bar"></view>
-  <view class="sheet-name" style="color: {{detail.text}};">{{detail.name}}</view>
+
+  <view class="sheet-head tone{{detail.color}}">
+    <view class="sheet-mark"></view>
+    <text class="sheet-name">{{detail.name}}</text>
+  </view>
 
   <view class="sheet-list">
     <view class="sheet-row">
@@ -109,11 +198,11 @@
     </view>
     <view class="sheet-row">
       <text class="sheet-k">地点</text>
-      <text class="sheet-v">{{detail.room}}</text>
+      <text class="sheet-v {{detail.room ? '' : 'sheet-v--none'}}">{{detail.room || '未填写'}}</text>
     </view>
     <view class="sheet-row">
       <text class="sheet-k">教师</text>
-      <text class="sheet-v">{{detail.teacher}}</text>
+      <text class="sheet-v {{detail.teacher ? '' : 'sheet-v--none'}}">{{detail.teacher || '未填写'}}</text>
     </view>
     <view class="sheet-row">
       <text class="sheet-k">周次</text>
@@ -121,6 +210,182 @@
     </view>
   </view>
 
-  <view class="sheet-btn" bindtap="onCloseDetail" hover-class="sheet-btn--hover" hover-stay-time="60">知道了</view>
+  <view class="sheet-actions">
+    <view class="btn btn--ghost" bindtap="onEditFromDetail" hover-class="btn--ghost-hover" hover-stay-time="60">编辑</view>
+    <view class="btn" bindtap="onCloseDetail" hover-class="btn--hover" hover-stay-time="60">知道了</view>
+  </view>
+  <view class="sheet-safe"></view>
+</view>
+
+<!-- ============ 添加 / 编辑课程弹层 ============ -->
+<!-- 点蒙层不关闭：表单填到一半误触会丢内容，只能点「取消」 -->
+<view class="mask" wx:if="{{showEditor}}" catchtouchmove="noop"></view>
+
+<view class="editor" wx:if="{{showEditor}}" aria-role="dialog">
+  <view class="editor-top">
+    <text class="editor-act" bindtap="onCloseEditor">取消</text>
+    <text class="editor-title">{{editor.isNew ? '添加课程' : '编辑课程'}}</text>
+    <text class="editor-act editor-act--save" bindtap="onSaveCourse">保存</text>
+  </view>
+
+  <scroll-view class="editor-body" scroll-y>
+    <!-- 实时预览：颜色、名称、地点改了立刻能看到 -->
+    <view class="preview tone{{editor.color}}">
+      <text class="preview-name {{editor.name ? '' : 'preview--ph'}}">{{editor.name || '课程名称'}}</text>
+      <text class="preview-room {{editor.room ? '' : 'preview--ph'}}">{{editor.room || '上课地点'}}</text>
+    </view>
+
+    <view class="card">
+      <view class="field">
+        <text class="field-label">课程名称</text>
+        <input
+          class="field-input"
+          value="{{editor.name}}"
+          data-field="name"
+          bindinput="onEditorInput"
+          placeholder="必填"
+          placeholder-class="ph"
+          maxlength="30"
+          cursor-spacing="40"
+          aria-label="课程名称"
+        />
+      </view>
+      <view class="divide"></view>
+      <view class="field">
+        <text class="field-label">上课地点</text>
+        <input
+          class="field-input"
+          value="{{editor.room}}"
+          data-field="room"
+          bindinput="onEditorInput"
+          placeholder="如 三教 201"
+          placeholder-class="ph"
+          maxlength="30"
+          cursor-spacing="40"
+          aria-label="上课地点"
+        />
+      </view>
+      <view class="divide"></view>
+      <view class="field">
+        <text class="field-label">任课教师</text>
+        <input
+          class="field-input"
+          value="{{editor.teacher}}"
+          data-field="teacher"
+          bindinput="onEditorInput"
+          placeholder="选填"
+          placeholder-class="ph"
+          maxlength="20"
+          cursor-spacing="40"
+          aria-label="任课教师"
+        />
+      </view>
+    </view>
+
+    <view class="card">
+      <picker mode="multiSelector" range="{{timeRange}}" value="{{editor.time}}" bindchange="onTimeChange">
+        <view class="field" hover-class="field--hover" hover-stay-time="60">
+          <text class="field-label">上课时间</text>
+          <text class="field-value num">{{timeRange[0][editor.time[0]]}} · 第 {{editor.time[1] + 1}}{{editor.time[2] > editor.time[1] ? '-' + (editor.time[2] + 1) : ''}} 节</text>
+          <image class="field-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+        </view>
+      </picker>
+      <view class="divide"></view>
+      <!-- 上课周次：保留原来的一行样式，点开后在新卡片里逐周选择 -->
+      <view class="field" bindtap="onOpenWeeks" hover-class="field--hover" hover-stay-time="60" aria-role="button">
+        <text class="field-label">上课周次</text>
+        <text class="field-value num">{{editor.pick.text}}</text>
+        <image class="field-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+      </view>
+    </view>
+
+    <view class="card colors">
+      <text class="field-label">颜色</text>
+      <view class="swatches">
+        <view
+          class="swatch tone{{item}} {{editor.color === item ? 'swatch--on' : ''}}"
+          wx:for="{{colors}}"
+          wx:key="*this"
+          data-color="{{item}}"
+          bindtap="onColorPick"
+          aria-role="radio"
+          aria-checked="{{editor.color === item}}"
+          aria-label="颜色 {{item + 1}}"
+        >
+          <image class="swatch-check" wx:if="{{editor.color === item}}" src="/assets/icons/check.svg" mode="aspectFit" />
+        </view>
+      </view>
+    </view>
+
+    <view
+      class="editor-delete"
+      wx:if="{{!editor.isNew}}"
+      bindtap="onDeleteCourse"
+      hover-class="editor-delete--hover"
+      hover-stay-time="60"
+      aria-role="button"
+    >删除这门课</view>
+
+    <view class="editor-safe"></view>
+  </scroll-view>
+</view>
+
+<!-- ============ 选择上课周次（叠在编辑弹层之上） ============
+     改动先记在 weekDraft 里，点「确定」才写回表单，点「取消」或蒙层放弃 -->
+<view class="mask mask--top" wx:if="{{showWeeks}}" bindtap="onWeekCancel" catchtouchmove="noop"></view>
+
+<view class="wsheet" wx:if="{{showWeeks}}" catchtouchmove="noop" aria-role="dialog" aria-label="选择上课周次">
+  <view class="sheet-bar"></view>
+
+  <view class="wsheet-head">
+    <text class="wsheet-title">上课周次</text>
+    <text class="wsheet-count num">已选 {{weekDraft.pick.count}} 周</text>
+  </view>
+
+  <!-- 快捷键：分段控件样式，当前选择正好吻合时高亮 -->
+  <view class="seg">
+    <view
+      class="seg-item {{weekDraft.pick.mode === 'all' ? 'seg-item--on' : ''}}"
+      data-mode="all"
+      bindtap="onWeekQuick"
+      aria-role="button"
+    >{{weekDraft.pick.mode === 'all' ? '全不选' : '全选'}}</view>
+    <view
+      class="seg-item {{weekDraft.pick.mode === 'odd' ? 'seg-item--on' : ''}}"
+      data-mode="odd"
+      bindtap="onWeekQuick"
+      aria-role="button"
+    >单周</view>
+    <view
+      class="seg-item {{weekDraft.pick.mode === 'even' ? 'seg-item--on' : ''}}"
+      data-mode="even"
+      bindtap="onWeekQuick"
+      aria-role="button"
+    >双周</view>
+  </view>
+
+  <!-- 1-18 周：6 列 × 3 行 -->
+  <view class="wgrid">
+    <view class="wcell" wx:for="{{pickWeeks}}" wx:key="*this">
+      <view
+        class="wk num {{weekDraft.picked[index] ? 'wk--on' : ''}}"
+        data-week="{{item}}"
+        bindtap="onWeekToggle"
+        hover-class="wk--hover"
+        hover-stay-time="60"
+        aria-role="checkbox"
+        aria-checked="{{weekDraft.picked[index]}}"
+        aria-label="第 {{item}} 周"
+      >{{item}}</view>
+    </view>
+  </view>
+
+  <view class="wsheet-summary {{weekDraft.pick.count ? '' : 'wsheet-summary--none'}}">{{weekDraft.pick.count ? weekDraft.pick.text : '还没有选择上课周'}}</view>
+  <view class="wsheet-extra" wx:if="{{editor.extraWeeks}}">另含{{editor.extraWeeks}}，超出 18 周，保存时保留</view>
+
+  <view class="sheet-actions">
+    <view class="btn btn--ghost" bindtap="onWeekCancel" hover-class="btn--ghost-hover" hover-stay-time="60">取消</view>
+    <view class="btn" bindtap="onWeekConfirm" hover-class="btn--hover" hover-stay-time="60">确定</view>
+  </view>
   <view class="sheet-safe"></view>
 </view>

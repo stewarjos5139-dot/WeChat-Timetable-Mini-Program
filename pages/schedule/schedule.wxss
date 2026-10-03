@@ -2,90 +2,27 @@
 
 .page {
   min-height: 100vh;
-  background: #fff;
 }
 
-/* ============ 示例数据提示条 ============ */
-.notice {
-  padding: 24rpx 28rpx;
-  display: flex;
-  align-items: center;
-  background: #FFF8E1;
-  border-bottom: 1rpx solid #F5E4BC;
-}
-
-.notice--hover {
-  background: #FBF0D2;
-}
-
-.notice-icon {
-  flex: none;
-  margin-right: 20rpx;
-  font-size: 34rpx;
-}
-
-.notice-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.notice-title {
-  font-size: 27rpx;
-  font-weight: 600;
-  color: #9A5B0A;
-}
-
-.notice-sub {
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  color: #B0821F;
-}
-
-.notice-arrow {
-  flex: none;
-  font-size: 34rpx;
-  line-height: 1;
-  color: #C9A96A;
+/* 圆形按钮、胶囊按钮共用的按下态 */
+.press {
+  background: var(--line) !important;
+  transform: scale(0.92);
 }
 
 /* ============ 周次切换 ============ */
 .weekbar {
-  padding: 20rpx 24rpx;
+  padding: 12rpx 28rpx 24rpx 36rpx;
   display: flex;
   align-items: center;
-  background: #fff;
-  border-bottom: 1rpx solid var(--line);
+  justify-content: space-between;
 }
 
-.weekbar-btn {
-  flex: none;
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: var(--brand-softer);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.weekbar-btn--hover {
-  background: #DDF3EA;
-}
-
-.weekbar-arrow {
-  margin-top: -6rpx;
-  font-size: 38rpx;
-  line-height: 1;
-  color: var(--brand);
-}
-
-.weekbar-center {
+.weekbar-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
 .weekbar-line {
@@ -94,102 +31,295 @@
 }
 
 .weekbar-week {
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: 44rpx;
+  font-weight: 700;
+  line-height: 1.2;
   color: var(--text-1);
+  letter-spacing: 1rpx;
 }
 
-.weekbar-badge {
-  height: 32rpx;
-  margin-left: 12rpx;
+.weekbar-tag {
+  height: 36rpx;
+  margin-left: 14rpx;
   padding: 0 12rpx;
   border-radius: 8rpx;
-  background: var(--brand-soft);
-  color: var(--brand-dark);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 20rpx;
-  line-height: 32rpx;
-}
-
-.weekbar-back {
-  margin-left: 12rpx;
-  font-size: 22rpx;
-  color: var(--brand);
+  font-weight: 600;
+  line-height: 36rpx;
 }
 
 .weekbar-range {
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  color: var(--text-3);
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+
+.weekbar-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.weekbar-today {
+  height: 64rpx;
+  margin-right: 4rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 64rpx;
+  transition: transform var(--dur) var(--ease);
+}
+
+.weekbar-btn {
+  width: 64rpx;
+  height: 64rpx;
+  margin-left: 12rpx;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur) var(--ease);
+}
+
+.weekbar-arrow {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.weekbar-arrow--prev {
+  transform: rotate(180deg);
+}
+
+/* ============ 空课表引导：毛玻璃 + 小卡片 ============
+ *
+ * 只虚化网格（.grid--blur），周次栏和星期表头保持清晰：
+ *   1. filter: blur 让课程格子糊开 —— 在安卓/iOS 微信里都稳定；
+ *   2. ::after 再铺一层白纱，把糊开的线条压淡，形成「白色毛玻璃」。
+ * 没有用 backdrop-filter：安卓部分机型不支持，效果会因机型而异。 */
+.grid--blur {
+  filter: blur(5px);
+}
+
+.grid--blur::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(246, 245, 242, 0.55);
+}
+
+/* 透明的触摸拦截层：铺满屏幕锁住课表（不能滑、不能点），本身不着色，
+ * 所以上方的周次和日期看起来完全不受影响 */
+.guide {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 150;
+  padding: 0 72rpx calc(140rpx + env(safe-area-inset-bottom));
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: mask-in 0.24s ease;
+}
+
+.guide-card {
+  position: relative;
+  width: 100%;
+  max-width: 560rpx;
+  padding: 52rpx 44rpx 24rpx;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  box-shadow: 0 20rpx 60rpx rgba(28, 28, 30, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: guide-in 0.28s var(--ease);
+}
+
+/* 关闭时卡片下沉淡出、遮罩淡出，动画结束后再移除节点 */
+.guide--leaving .guide-card {
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.guide--leaving .guide-card {
+  transform: translateY(16rpx) scale(0.97);
+}
+
+/* 右上角关闭：图标 28rpx，热区 72rpx */
+.guide-close {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guide-close--hover {
+  background: var(--fill);
+}
+
+.guide-close-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.guide-icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guide-icon-img {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.guide-title {
+  margin-top: 24rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.guide-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.guide-btn {
+  width: 100%;
+  height: 84rpx;
+  margin-top: 36rpx;
+  font-size: 28rpx;
+}
+
+/* 次选项：纯文字，和主按钮拉开主次，但热区一样高 */
+.guide-skip {
+  width: 100%;
+  height: 80rpx;
+  margin-top: 8rpx;
+  border-radius: var(--r-md);
+  font-size: 26rpx;
+  line-height: 80rpx;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.guide-skip--hover {
+  background: var(--hover-bg);
+}
+
+@keyframes guide-in {
+  from { opacity: 0; transform: translateY(24rpx) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ============ 星期表头（吸顶） ============ */
 .head {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: var(--z-head);
+  padding-bottom: 12rpx;
   display: flex;
-  align-items: stretch;
-  background: #fff;
+  background: var(--bg);
   border-bottom: 1rpx solid var(--line);
 }
 
 .head-gutter {
   flex: none;
-  width: 76rpx;
-  padding: 14rpx 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.head-gutter-text {
-  font-size: 20rpx;
-  color: var(--text-3);
+  width: 64rpx;
 }
 
 .head-day {
   flex: 1;
   min-width: 0;
-  padding: 14rpx 0;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .head-label {
-  font-size: 24rpx;
-  color: var(--text-2);
-}
-
-.head-date {
-  margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--text-3);
 }
 
-/* 今天：日期变成薄荷绿胶囊 */
+.head-date {
+  width: 48rpx;
+  height: 48rpx;
+  margin-top: 4rpx;
+  border-radius: 50%;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 48rpx;
+  text-align: center;
+  color: var(--text-1);
+}
+
+/* 今天：日期放进墨蓝实心圆 */
 .head-day--today .head-label {
-  color: var(--brand);
+  color: var(--accent);
   font-weight: 600;
 }
 
 .head-day--today .head-date {
-  padding: 2rpx 10rpx;
-  border-radius: 16rpx;
-  background: var(--brand);
+  background: var(--accent);
   color: #fff;
 }
 
 /* ============ 课程网格 ============ */
 .grid {
+  position: relative;
   display: flex;
   align-items: flex-start;
+  transition: filter 0.24s var(--ease);
+}
+
+/* ---- 右侧 7 天：swiper 每页一周 ---- */
+.swiper {
+  flex: 1;
+  min-width: 0;
+}
+
+.week {
+  height: 100%;
+  display: flex;
+}
+
+/* 还没装载的周：用渐变画出同样的横线，滑动过程中不会看到空白 */
+.week--blank {
+  background-image: linear-gradient(to bottom, transparent 111rpx, var(--line-soft) 111rpx);
+  background-size: 100% 112rpx;
 }
 
 /* ---- 左侧节次列 ---- */
 .gutter {
   flex: none;
-  width: 76rpx;
+  width: 64rpx;
 }
 
 .gutter-cell {
@@ -197,25 +327,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-bottom: 1rpx solid var(--line);
+  border-bottom: 1rpx solid var(--line-soft);
 }
 
 .gutter-idx {
   font-size: 22rpx;
   font-weight: 500;
-  color: var(--text-2);
   line-height: 1.2;
+  color: var(--text-3);
 }
 
 .gutter-time {
   margin-top: 4rpx;
-  font-size: 16rpx;
-  color: #B7C2C8;
+  font-size: 18rpx;
   line-height: 1.2;
-  transform: scale(0.92);
+  color: var(--text-3);
 }
 
-/* ---- 每天的课程列 ---- */
+/* ---- 每天的课程列：只画横线，不画竖线 ---- */
 .col {
   position: relative;
   flex: 1;
@@ -223,43 +352,73 @@
 }
 
 .col--today {
-  background: #F7FCFA;
+  background: rgba(47, 74, 138, 0.04);
 }
 
 .slot {
-  border-bottom: 1rpx solid var(--line);
-  border-left: 1rpx solid var(--line);
+  border-bottom: 1rpx solid var(--line-soft);
 }
 
-/* ---- 课程块 ---- */
+/* ---- 课程块 ----
+ * 颜色来自 app.wxss 的 .toneN（--tone-bg / --tone-bar / --tone-fg） */
 .block {
   position: absolute;
-  left: 5rpx;
-  right: 5rpx;
+  left: 4rpx;
+  right: 4rpx;
+  margin-top: 5rpx;
   padding: 10rpx 8rpx;
-  border-radius: 12rpx;
-  border-left: 6rpx solid transparent;
+  border-radius: 10rpx;
+  border-left: 6rpx solid var(--tone-bar);
+  background: var(--tone-bg);
+  color: var(--tone-fg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: opacity var(--dur) var(--ease);
 }
 
+/* ---- 点空白格出现的「＋」：虚线框，和课程块同尺寸同位置 ---- */
+.plus {
+  position: absolute;
+  left: 4rpx;
+  right: 4rpx;
+  margin-top: 5rpx;
+  border-radius: 10rpx;
+  border: 2rpx dashed var(--accent);
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: plus-in 0.18s var(--ease);
+}
+
+.plus-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+@keyframes plus-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 绝对定位的方块缩放会和相邻块挤在一起，所以只降透明度 */
 .block--hover {
-  opacity: 0.72;
+  opacity: 0.7;
 }
 
 .block-name {
-  font-size: 20rpx;
+  font-size: 21rpx;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.3;
   word-break: break-all;
 }
 
 .block-room {
   margin-top: 6rpx;
-  font-size: 17rpx;
-  line-height: 1.2;
-  opacity: 0.78;
+  font-size: 18rpx;
+  line-height: 1.25;
+  opacity: 0.8;
   word-break: break-all;
 }
 
@@ -270,8 +429,8 @@
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 900;
-  background: rgba(16, 32, 28, 0.45);
+  z-index: var(--z-mask);
+  background: rgba(28, 28, 30, 0.4);
   animation: mask-in 0.2s ease;
 }
 
@@ -280,40 +439,62 @@
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 901;
+  z-index: var(--z-sheet);
   padding: 20rpx 40rpx 0;
-  background: #fff;
-  border-radius: 32rpx 32rpx 0 0;
-  animation: sheet-in 0.24s cubic-bezier(0.22, 0.68, 0.36, 1);
+  background: var(--card);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  animation: sheet-in 0.26s var(--ease);
 }
 
 .sheet-bar {
-  width: 72rpx;
+  width: 64rpx;
   height: 8rpx;
-  margin: 0 auto 28rpx;
+  margin: 0 auto 32rpx;
   border-radius: 4rpx;
-  background: #E4EBE9;
+  background: var(--line);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* 课程名前的色条，与课表方块同色 */
+.sheet-mark {
+  flex: none;
+  width: 8rpx;
+  height: 40rpx;
+  margin: 8rpx 18rpx 0 0;
+  border-radius: 4rpx;
+  background: var(--tone-bar);
 }
 
 .sheet-name {
+  flex: 1;
+  min-width: 0;
   font-size: 38rpx;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.4;
+  color: var(--text-1);
 }
 
 .sheet-list {
-  margin-top: 28rpx;
+  margin-top: 24rpx;
 }
 
 .sheet-row {
-  padding: 18rpx 0;
+  padding: 22rpx 0;
   display: flex;
-  border-bottom: 1rpx solid var(--line);
+  border-bottom: 1rpx solid var(--line-soft);
+}
+
+.sheet-row:last-child {
+  border-bottom: none;
 }
 
 .sheet-k {
   flex: none;
-  width: 120rpx;
+  width: 112rpx;
   font-size: 26rpx;
   color: var(--text-3);
 }
@@ -324,21 +505,339 @@
   color: var(--text-1);
 }
 
-.sheet-btn {
-  height: 88rpx;
-  margin: 36rpx 0 24rpx;
-  border-radius: 44rpx;
-  background: var(--brand);
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 500;
+.sheet-v--none {
+  color: var(--text-3);
+}
+
+/* 「编辑」次按钮 + 「知道了」主按钮并排 */
+.sheet-actions {
+  margin: 32rpx 0 24rpx;
+  display: flex;
+}
+
+.sheet-actions .btn {
+  flex: 1;
+}
+
+.sheet-actions .btn + .btn {
+  margin-left: 20rpx;
+}
+
+/* ============ 添加 / 编辑课程弹层 ============
+ * 底色用页面灰，表单分组用白卡片，和导入页一个样子 */
+.editor {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-sheet);
+  max-height: 86vh;
+  background: var(--bg);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: sheet-in 0.26s var(--ease);
+}
+
+.editor-top {
+  flex: none;
+  height: 104rpx;
+  padding: 0 12rpx;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.editor-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+/* 两侧文字按钮，热区放大到 88rpx 高 */
+.editor-act {
+  min-width: 120rpx;
+  height: 88rpx;
+  padding: 0 20rpx;
+  font-size: 29rpx;
+  line-height: 88rpx;
+  color: var(--text-2);
+}
+
+.editor-act--save {
+  text-align: right;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.editor-body {
+  flex: 1;
+  min-height: 0;
+  padding: 28rpx 32rpx 0;
+}
+
+.editor-body .card {
+  margin-top: 24rpx;
+}
+
+/* ---- 实时预览：长得和课表方块一样，只是放大 ---- */
+.preview {
+  padding: 22rpx 24rpx;
+  border-radius: var(--r-md);
+  border-left: 10rpx solid var(--tone-bar);
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+  display: flex;
+  flex-direction: column;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.preview-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.preview-room {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.preview--ph {
+  opacity: 0.45;
+}
+
+/* ---- 表单行 ---- */
+.field {
+  min-height: 100rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.field--hover {
+  background: var(--hover-bg);
+}
+
+.field-label {
+  flex: none;
+  width: 150rpx;
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+.field-input {
+  flex: 1;
+  min-width: 0;
+  height: 100rpx;
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+.ph {
+  color: var(--text-3);
+}
+
+.field-value {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+
+.field-arrow {
+  flex: none;
+  width: 28rpx;
+  height: 28rpx;
+  margin-left: 8rpx;
+}
+
+.editor-body .divide {
+  margin-left: 28rpx;
+}
+
+/* ============ 选择上课周次卡片 ============
+ * 叠在编辑弹层上面的第二层底部卡片。tabBar 在编辑弹层打开时已经滑走，
+ * 所以这里贴着屏幕底部放，只需要留出安全区（.sheet-safe）。 */
+.mask--top {
+  z-index: var(--z-mask-top);
+  background: rgba(28, 28, 30, 0.32); /* 下面已经有一层蒙层，这层浅一点，避免叠成一片黑 */
+}
+
+.wsheet {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-sheet-top);
+  padding: 20rpx 40rpx 0;
+  background: var(--card);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: 0 -8rpx 40rpx rgba(28, 28, 30, 0.08);
+  animation: sheet-in 0.26s var(--ease);
+}
+
+.wsheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.wsheet-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.wsheet-count {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+
+/* ---- 快捷键：分段控件 ---- */
+.seg {
+  margin-top: 28rpx;
+  padding: 6rpx;
+  border-radius: var(--r-md);
+  background: var(--fill);
+  display: flex;
+}
+
+.seg-item {
+  flex: 1;
+  height: 64rpx;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  line-height: 64rpx;
+  text-align: center;
+  color: var(--text-2);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+/* 当前选择正好等于这个快捷键：白色滑块浮起来 */
+.seg-item--on {
+  background: var(--card);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(28, 28, 30, 0.08);
+}
+
+/* ---- 1-18 周：每格占 1/6 宽，圆在格子里居中，不依赖精确像素就能对齐 ---- */
+.wgrid {
+  margin: 20rpx -8rpx 0;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.wcell {
+  width: 16.6666%;
+  padding: 12rpx 0;
+  display: flex;
   justify-content: center;
 }
 
-.sheet-btn--hover {
-  background: var(--brand-dark);
+.wk {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--text-1);
+  font-size: 30rpx;
+  font-weight: 500;
+  line-height: 84rpx;
+  text-align: center;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.wk--hover {
+  transform: scale(0.9);
+}
+
+.wk--on {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---- 选择结果 ---- */
+.wsheet-summary {
+  margin-top: 16rpx;
+  font-size: 25rpx;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.wsheet-summary--none {
+  color: var(--danger);
+}
+
+.wsheet-extra {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  text-align: center;
+  color: var(--text-3);
+}
+
+/* ---- 颜色 ---- */
+.colors {
+  padding: 28rpx;
+}
+
+.swatches {
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 色块用课程块的色条色，比浅底更好分辨；选中时外圈一道墨蓝描边 */
+.swatch {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--tone-bar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.swatch--on {
+  box-shadow: 0 0 0 5rpx var(--card), 0 0 0 9rpx var(--accent);
+  transform: scale(1.04);
+}
+
+.swatch-check {
+  width: 34rpx;
+  height: 34rpx;
+}
+
+/* ---- 删除 ---- */
+.editor-delete {
+  margin-top: 24rpx;
+  height: 100rpx;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  color: var(--danger);
+  font-size: 29rpx;
+  line-height: 100rpx;
+  text-align: center;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.editor-delete--hover {
+  background: var(--hover-bg);
+}
+
+.editor-safe {
+  height: calc(48rpx + env(safe-area-inset-bottom));
 }
 
 .sheet-safe {
@@ -346,19 +845,11 @@
 }
 
 @keyframes mask-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

@@ -2,125 +2,118 @@
 <view class="page">
 
   <!-- 说明头 -->
-  <view class="hero">
-    <view class="hero-mark">🎓</view>
-    <view class="hero-body">
-      <view class="hero-title">连接学校教务系统</view>
-      <view class="hero-sub">自动抓取并解析本学期课表</view>
+  <view class="intro">
+    <text class="intro-title">导入课表</text>
+    <text class="intro-sub">连接学校教务系统，自动抓取并解析本学期课表</text>
+  </view>
+
+  <!-- 账号 -->
+  <view class="group-label">教务系统账号</view>
+  <view class="card">
+    <view class="field">
+      <text class="field-label">学号</text>
+      <input
+        class="field-input num"
+        type="text"
+        value="{{studentId}}"
+        placeholder="请输入学号"
+        placeholder-class="ph"
+        bindinput="onIdInput"
+        aria-label="学号"
+      />
+    </view>
+
+    <view class="divide"></view>
+
+    <view class="field">
+      <text class="field-label">密码</text>
+      <input
+        class="field-input"
+        password="{{true}}"
+        value="{{password}}"
+        placeholder="教务系统密码"
+        placeholder-class="ph"
+        bindinput="onPwdInput"
+        aria-label="密码"
+      />
     </view>
   </view>
 
-  <view class="body">
-
-    <!-- 表单 -->
-    <view class="card form">
-      <view class="field">
-        <text class="field-label">学号</text>
-        <input
-          class="field-input"
-          type="text"
-          value="{{studentId}}"
-          placeholder="请输入学号"
-          placeholder-class="ph"
-          bindinput="onIdInput"
-        />
-      </view>
-
-      <view class="divide"></view>
-
-      <view class="field">
-        <text class="field-label">密码</text>
-        <input
-          class="field-input"
-          password="{{true}}"
-          value="{{password}}"
-          placeholder="请输入教务系统密码"
-          placeholder-class="ph"
-          bindinput="onPwdInput"
-        />
-      </view>
-
-      <view class="divide"></view>
-
-      <view class="field">
-        <text class="field-label">学年</text>
-        <picker
-          class="field-picker"
-          mode="selector"
-          range="{{yearOptions}}"
-          range-key="label"
-          value="{{yearIndex}}"
-          bindchange="onYearChange"
-        >
-          <view class="picker-value">
-            <text class="picker-text">{{yearOptions[yearIndex].label}}</text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-      </view>
-
-      <view class="divide"></view>
-
-      <view class="field">
-        <text class="field-label">学期</text>
-        <picker
-          class="field-picker"
-          mode="selector"
-          range="{{termOptions}}"
-          range-key="label"
-          value="{{termIndex}}"
-          bindchange="onTermChange"
-        >
-          <view class="picker-value">
-            <text class="picker-text">{{termOptions[termIndex].label}}</text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-      </view>
-
-      <view class="divide"></view>
-
-      <view class="field">
-        <text class="field-label">开学周一</text>
-        <picker
-          class="field-picker"
-          mode="date"
-          value="{{startDate}}"
-          bindchange="onStartDateChange"
-        >
-          <view class="picker-value">
-            <text class="picker-text">{{startDate}}</text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-      </view>
-    </view>
-
-    <view class="form-hint">「开学周一」填本学期第 1 周的周一。课表靠它推算每个星期的日期，填错会让整张表的周次和日期偏移。</view>
-
-    <!-- 提交 -->
-    <view
-      class="submit {{backendReady ? '' : 'submit--off'}}"
-      bindtap="onSubmit"
-      hover-class="submit--hover"
-      hover-stay-time="60"
+  <!-- 学期 -->
+  <view class="group-label">学期设置</view>
+  <view class="card">
+    <picker
+      mode="selector"
+      range="{{yearOptions}}"
+      range-key="label"
+      value="{{yearIndex}}"
+      bindchange="onYearChange"
     >
-      <text wx:if="{{loading}}">正在导入…</text>
-      <text wx:else>导入课表</text>
-    </view>
+      <view class="field" hover-class="field--hover" hover-stay-time="60">
+        <text class="field-label">学年</text>
+        <text class="field-value num">{{yearOptions[yearIndex].label}}</text>
+        <image class="field-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+      </view>
+    </picker>
 
-    <!-- 后端未配置的提示 -->
-    <view class="notice" wx:if="{{!backendReady}}">
-      <text class="notice-title">⚠️ 中间层尚未配置</text>
-      <text class="notice-text">导入课表需要先连上中间层服务。在 utils/config.js 里填上云托管的环境 ID 和服务名，或自建服务的地址即可启用，其余代码无需改动。</text>
-    </view>
+    <view class="divide"></view>
 
-    <!-- 隐私说明 -->
-    <view class="privacy">
+    <picker
+      mode="selector"
+      range="{{termOptions}}"
+      range-key="label"
+      value="{{termIndex}}"
+      bindchange="onTermChange"
+    >
+      <view class="field" hover-class="field--hover" hover-stay-time="60">
+        <text class="field-label">学期</text>
+        <text class="field-value">{{termOptions[termIndex].label}}</text>
+        <image class="field-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+      </view>
+    </picker>
+
+    <view class="divide"></view>
+
+    <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+      <view class="field" hover-class="field--hover" hover-stay-time="60">
+        <text class="field-label">开学周一</text>
+        <text class="field-value num">{{startDate}}</text>
+        <image class="field-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+      </view>
+    </picker>
+  </view>
+
+  <view class="form-hint">「开学周一」填本学期第 1 周的周一。课表靠它推算每个星期的日期，填错会让整张表的周次和日期偏移。</view>
+
+  <!-- 提交 -->
+  <view
+    class="btn submit {{backendReady ? '' : 'submit--off'}}"
+    bindtap="onSubmit"
+    hover-class="btn--hover"
+    hover-stay-time="60"
+    aria-role="button"
+  >
+    <text wx:if="{{loading}}">正在导入…</text>
+    <text wx:else>导入课表</text>
+  </view>
+
+  <!-- 后端未配置的提示 -->
+  <view class="notice" wx:if="{{!backendReady}}">
+    <view class="notice-head">
+      <image class="notice-icon" src="/assets/icons/alert.svg" mode="aspectFit" />
+      <text class="notice-title">中间层尚未配置</text>
+    </view>
+    <text class="notice-text">导入课表需要先连上中间层服务。在 utils/config.js 里填上云托管的环境 ID 和服务名，或自建服务的地址即可启用，其余代码无需改动。</text>
+  </view>
+
+  <!-- 隐私说明 -->
+  <view class="privacy">
+    <view class="privacy-head">
+      <image class="privacy-icon" src="/assets/icons/lock.svg" mode="aspectFit" />
       <text class="privacy-title">关于你的账号安全</text>
-      <text class="privacy-item">· 密码不会保存在本机，本机只记住学号</text>
-      <text class="privacy-item">· 导入时密码会经由中间层服务转发给学校教务系统</text>
-      <text class="privacy-item">· 请确认你信任该服务，再输入密码</text>
     </view>
+    <text class="privacy-item">· 密码不会保存在本机，本机只记住学号</text>
+    <text class="privacy-item">· 导入时密码会经由中间层服务转发给学校教务系统</text>
+    <text class="privacy-item">· 请确认你信任该服务，再输入密码</text>
   </view>
 </view>

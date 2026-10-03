@@ -13,8 +13,8 @@
  *   cdmc  上课地点      xm    教师姓名
  */
 
-/** 配色数量，与课表页 PALETTE 的长度保持一致 */
-const COLOR_COUNT = 5
+/** 配色分组数量，要与 app.wxss 里 .toneN 的组数一致 */
+const COLOR_COUNT = 7
 
 /**
  * 节次 → 起始节与节数。
