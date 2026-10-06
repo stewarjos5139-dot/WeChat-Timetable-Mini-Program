@@ -4,12 +4,13 @@
 
     <!-- 用户信息 -->
     <view class="card profile">
-      <view class="avatar">
-        <image class="avatar-img" src="/assets/icons/tab-mine.svg" mode="aspectFit" />
+      <view class="avatar {{initial ? 'avatar--text' : ''}}">
+        <text class="avatar-initial" wx:if="{{initial}}">{{initial}}</text>
+        <image wx:else class="avatar-img" src="/assets/icons/tab-mine.svg" mode="aspectFit" />
       </view>
       <view class="profile-body">
-        <text class="profile-name">未登录</text>
-        <text class="profile-sub">导入课表后自动同步</text>
+        <text class="profile-name">{{loggedIn ? name : '未登录'}}</text>
+        <text class="profile-sub">{{subText}}</text>
       </view>
       <view
         class="profile-btn"
@@ -17,7 +18,7 @@
         hover-class="profile-btn--hover"
         hover-stay-time="60"
         aria-role="button"
-      >导入课表</view>
+      >{{loggedIn ? '重新导入' : '导入课表'}}</view>
     </view>
 
     <!-- 课表 -->
@@ -31,6 +32,14 @@
           <image class="row-icon" src="/assets/icons/import.svg" mode="aspectFit" />
           <text class="row-label">导入课表</text>
           <text class="row-value">{{hasSchedule ? termText : '未导入'}}</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+        </view>
+
+        <view class="divide"></view>
+
+        <view class="row" bindtap="onRestoreFromCloud" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+          <image class="row-icon" src="/assets/icons/cloud.svg" mode="aspectFit" />
+          <text class="row-label">从云端恢复课表</text>
           <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
         </view>
 

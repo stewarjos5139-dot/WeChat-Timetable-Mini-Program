@@ -2,6 +2,7 @@
 const api = require('../../utils/api')
 const store = require('../../utils/store')
 const parser = require('../../utils/parser')
+const cloud = require('../../utils/cloud')
 
 Page({
   data: {
@@ -124,7 +125,14 @@ Page({
           xqm: params.xqm,
           startDate: params.startDate
         })
-        store.setAccount(params.studentId) // 只存学号，密码用完即弃
+        // 姓名和学号一起存下来，给「我的」页面显示；密码用完即弃，不落盘
+        store.setProfile({
+          studentId: params.studentId,
+          name: res.studentName || ''
+        })
+
+        // 静默传一份到云端，重装 / 换机时能恢复。失败不打扰用户
+        cloud.backup()
 
         const stat = parser.summarize(courses)
         wx.showToast({

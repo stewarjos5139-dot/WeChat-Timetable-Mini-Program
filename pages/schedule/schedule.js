@@ -1,5 +1,6 @@
 // pages/schedule/schedule.js
 const store = require('../../utils/store')
+const cloud = require('../../utils/cloud')
 
 /** 每节课的行高（rpx），与 wxss 里的 .slot 高度保持一致 */
 const ROW_H = 112
@@ -394,6 +395,8 @@ Page({
   refresh() {
     store.setCourses(this._courses)
     this._stamp = store.getStamp()
+    // 手动增删改也算数据变化，同步一份到云端。失败静默
+    cloud.backup()
     this.setData({ isEmpty: this._courses.length === 0 })
     this.goWeek(this.data.week)
   },

@@ -33,6 +33,19 @@
   height: 52rpx;
 }
 
+/* 有姓名时头像换成墨蓝底 + 姓名首字。
+ * 白字压在 --accent(#2f4a8a) 上对比度约 8.5:1，远高于 4.5 的线 */
+.avatar--text {
+  background: var(--accent);
+}
+
+.avatar-initial {
+  font-size: 40rpx;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+}
+
 .profile-body {
   flex: 1;
   min-width: 0;

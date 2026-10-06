@@ -9,6 +9,8 @@
 const KEY_COURSES = 'schedule_courses'
 const KEY_TERM = 'schedule_term'
 const KEY_STAMP = 'schedule_stamp'
+const KEY_PROFILE = 'user_profile'
+// 旧版只存学号的 key。现在只读不写，给装过旧版本的机器做回退（见 getAccount）
 const KEY_ACCOUNT = 'schedule_account'
 
 /** 学期设置默认值。xnm/xqm 是正方教务系统的学年/学期参数 */
@@ -72,13 +74,34 @@ function setTerm(term) {
   wx.setStorageSync(KEY_TERM, Object.assign({}, DEFAULT_TERM, term || {}))
 }
 
-/** 只记住学号，方便下次填表 */
-function getAccount() {
-  return wx.getStorageSync(KEY_ACCOUNT) || ''
+/* ─────────────── 用户档案 ───────────────
+ * 导入课表时顺带从教务系统拿到姓名，和学号一起存下来。
+ * 档案独立于课表 —— 清除课表数据不会动它。
+ */
+
+/** 档案 { studentId, name }；从没导入过时返回 null */
+function getProfile() {
+  const saved = wx.getStorageSync(KEY_PROFILE)
+  return saved && typeof saved === 'object' && saved.studentId ? saved : null
 }
 
-function setAccount(studentId) {
-  wx.setStorageSync(KEY_ACCOUNT, studentId || '')
+function setProfile(profile) {
+  const p = profile || {}
+  wx.setStorageSync(KEY_PROFILE, {
+    studentId: String(p.studentId || '').trim(),
+    name: String(p.name || '').trim()
+  })
+}
+
+/**
+ * 登录表单里预填的学号。
+ * 优先读档案；档案不存在时回退到旧版的 KEY_ACCOUNT ——
+ * 装过旧版本的机器升级后，学号不会丢。
+ */
+function getAccount() {
+  const profile = getProfile()
+  if (profile) return profile.studentId
+  return wx.getStorageSync(KEY_ACCOUNT) || ''
 }
 
 module.exports = {
@@ -91,6 +114,7 @@ module.exports = {
   getStamp,
   getTerm,
   setTerm,
-  getAccount,
-  setAccount
+  getProfile,
+  setProfile,
+  getAccount
 }

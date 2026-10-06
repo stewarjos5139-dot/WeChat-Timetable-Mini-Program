@@ -2,9 +2,10 @@
 /**
  * 正方教务系统课表解析。
  *
- * 输入是 xskbcx_cxXsKb.html 返回 JSON 里的 kbList 数组，输出是本项目课表页
- * 使用的课程结构。解析放在小程序端而不是后端，是为了学校改格式时能只发版
- * 小程序、不用动服务端。
+ * 输入是正方 kbcx/xskbcx_cxXsgrkb.html 返回的 JSON —— 后端取其中 items 数组
+ * 原样透传过来，字段名叫 kbList（见 server/zfsoft.js 的 fetchKbList）。
+ * 输出是本项目课表页使用的课程结构。解析放在小程序端而不是后端，是为了学校
+ * 改格式时能只发版小程序、不用动服务端。
  *
  * kbList 单项的常见字段：
  *   kcmc  课程名称      jxbmc 教学班名称
