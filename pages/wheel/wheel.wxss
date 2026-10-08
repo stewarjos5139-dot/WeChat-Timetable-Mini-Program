@@ -1,0 +1,628 @@
+/**pages/wheel/wheel.wxss**/
+
+/* 关掉本页的滚动条：滑动时它浮在底部，还能拖着改页面位置。
+ * 写在页面 wxss 里，只作用于转盘页，课表和「我的」不受影响。 */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+  color: transparent;
+}
+
+.page {
+  min-height: 100vh;
+}
+
+.pad {
+  padding: 16rpx 32rpx 0;
+}
+
+/* ============ 转盘区 ============ */
+.wheel-wrap {
+  margin-top: 32rpx;
+}
+
+.wheel-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-1);
+  min-height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32rpx;
+}
+
+.wheel-container {
+  position: relative;
+  width: 560rpx;
+  height: 560rpx;
+  margin: 40rpx auto 0;
+}
+
+/* 转盘底座：比盘面大一圈的白环 + 发丝描边，做出「盘嵌在座里」的层次。
+ * 投影必须放这儿 —— 底座不跟着转，影子才不会随转盘一起甩。 */
+.wheel-base {
+  position: absolute;
+  top: -20rpx;
+  left: -20rpx;
+  right: -20rpx;
+  bottom: -20rpx;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 0 0 1rpx var(--line), 0 16rpx 40rpx rgba(28, 28, 30, 0.1);
+  z-index: 1;
+}
+
+/* 转盘本体：圆形容器，从中心旋转。
+ * 阴影只留对称的一圈描边 —— 带偏移的影子一转方向就露馅（这个元素在转）。 */
+.wheel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: 0 0 0 1rpx var(--line);
+  transition: none;
+  z-index: 2;
+}
+
+.wheel--spinning {
+  transition: transform 3.6s cubic-bezier(0.15, 0.8, 0.25, 1);
+}
+
+/* ---------- 扇形 ----------
+ * 一个扇形 = 圆 ∩ 两个半平面。这里用两层 overflow: hidden 各切一刀：
+ *   .slice-half  → 右半平面，本地角度 [0°, 180°]
+ *   .slice-wedge → 绕圆心转过 (θ - 180°)，把这半平面挪到 [θ-180°, θ]
+ * 两者相交就是 [0°, θ]，即 .slice 本地那个扇形。
+ * 只用 transform + overflow，不碰 clip-path（安卓 WebView 上不保险），
+ * 也不受 transform 叠加顺序影响 —— 原地就能验证对不对。
+ * 代价：单个扇形最大只能切到 180°。选项数为 1 时走 .slice--full 整盘铺满。
+ */
+.slice {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+}
+
+/* 第一刀：留下右半边 */
+.slice-half {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 第二刀：绕圆心转。原点取左边中点 —— 正是转盘圆心 */
+.slice-wedge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  transform-origin: 0 50%;
+}
+
+/* 实际的颜色块：先画一整个圆，交给上面两层裁成扇形。
+ * left: -100% 是按 .slice-wedge 的半宽算的，正好让这个圆和 .wheel 严丝合缝。 */
+.slice-fill {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--tone-bg);
+}
+
+/* 只有一个选项：不裁，整盘一个色 */
+.slice--full .slice-half {
+  left: 0;
+  width: 100%;
+}
+
+.slice--full .slice-fill {
+  left: 0;
+  width: 100%;
+}
+
+/* 扇形内容容器：从圆心沿半径向外。
+ * 推出去要用 padding 而不是 margin —— transform-origin 是 0 0，
+ * 盒子原点必须钉在圆心上，用 margin 一挪旋转轴就跟着跑了。
+ * 内容区 = 80~260rpx，中心落在 170rpx ≈ 0.6R，正好是扇形的面积重心。 */
+.slice-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 0;
+  transform-origin: 0 0;
+  width: 260rpx;
+  padding-left: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 沿半径方向居中 */
+}
+
+.slice-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--tone-fg);
+  word-break: break-all;
+  text-align: center;
+  /* 写成绝对值而不是 100%：<text> 的百分比宽度在小程序里历来不稳，
+   * 这个数 = .slice-content 的 260 - padding 80 */
+  max-width: 180rpx;
+}
+
+/* 没有选项时的占位 */
+.wheel-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.wheel-empty-text {
+  font-size: 26rpx;
+  color: var(--text-3);
+}
+
+/* ---------- 中心指针 ----------
+ * 一个朝上的三角，正压在转盘圆心上，指着 12 点那一格。
+ * border-bottom 画出来的三角形尖端朝上（border-top 才是朝下）。
+ * 就是一个 0×0 的盒子撑出来的，靠 translate(-50%,-50%) 把border-box居到圆心
+ * —— 百分比是按含边框的尺寸算的，所以正好对中。 */
+.pointer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 26rpx solid transparent;
+  border-right: 26rpx solid transparent;
+  border-bottom: 84rpx solid var(--accent);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 6rpx 16rpx rgba(47, 74, 138, 0.35));
+  z-index: 10;
+}
+
+/* 开始转盘按钮：独立在转盘下方 */
+.spin-action {
+  width: 480rpx;
+  height: 96rpx;
+  margin: 48rpx auto 0;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(47, 74, 138, 0.25);
+  transition: transform var(--dur) var(--ease), background-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.spin-action--disabled {
+  background: var(--fill);
+  color: var(--text-3);
+  box-shadow: none;
+}
+
+/* ============ 快捷模板 ============ */
+.templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  padding: 0 8rpx;
+}
+
+.tpl-chip {
+  height: 72rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-full);
+  border: 2rpx solid var(--line);
+  background: var(--card);
+  font-size: 27rpx;
+  line-height: 68rpx;
+  color: var(--text-1);
+  transition: all var(--dur) var(--ease);
+}
+
+.tpl-chip--hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  transform: translateY(-2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(47, 74, 138, 0.2);
+}
+
+/* 选中的那个模板才填色 */
+.tpl-chip--on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* 末尾的「＋」：虚线描边，一眼看出是「新建」不是一个模板 */
+.tpl-chip--add {
+  padding: 0 34rpx;
+  border-style: dashed;
+  font-size: 34rpx;
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+/* ============ 选项列表 ============ */
+.opt-row {
+  min-height: 100rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  transition: background-color var(--dur) var(--ease);
+}
+
+/* 整行可点 → 得有按下去的反应 */
+.opt-row--hover {
+  background: var(--hover-bg);
+}
+
+/* 就地改文字时的输入框，占掉 .opt-text 的位置 */
+.opt-input {
+  flex: 1;
+  min-width: 0;
+  height: 64rpx;
+  font-size: 30rpx;
+  color: var(--text-1);
+}
+
+.opt-dot {
+  flex: none;
+  width: 20rpx;
+  height: 20rpx;
+  margin-right: 24rpx;
+  border-radius: 50%;
+  background: var(--tone-bar);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
+}
+
+.opt-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  color: var(--text-1);
+  word-break: break-all;
+}
+
+.opt-del {
+  flex: none;
+  width: 64rpx;
+  height: 64rpx;
+  margin-left: 12rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.opt-del--hover {
+  background: #fef0ee;
+}
+
+.opt-del-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+/* ============ 添加输入 ============ */
+.add-wrap {
+  margin-bottom: 24rpx; /* 输入框现在在列表上方，间距往下留 */
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.add-input-wrap {
+  flex: 1;
+  min-width: 0;
+  height: 96rpx;
+  border-radius: var(--r-md);
+  border: 2rpx solid var(--line);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  padding: 0 28rpx;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.add-input-wrap:focus-within {
+  border-color: var(--accent);
+}
+
+.add-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  color: var(--text-1);
+}
+
+/* 占位文字走辅助灰。class 名被 placeholder-class 引着，不写就落到默认深灰 */
+.ph {
+  color: var(--text-3);
+}
+
+.add-btn {
+  flex: none;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(47, 74, 138, 0.2);
+  transition: all var(--dur) var(--ease);
+}
+
+.add-btn--hover {
+  transform: scale(0.94);
+  box-shadow: 0 2rpx 8rpx rgba(47, 74, 138, 0.15);
+}
+
+.add-btn--disabled {
+  background: var(--fill);
+  box-shadow: none;
+}
+
+.add-btn-icon {
+  width: 52rpx;
+  height: 52rpx;
+  filter: brightness(0) invert(1);
+}
+
+.add-btn--disabled .add-btn-icon {
+  filter: none;
+  opacity: 0.4;
+}
+
+.add-hint {
+  margin: 16rpx 0; /* 上下都留：既在输入框下面用过，也在选项卡片下面用 */
+  font-size: 24rpx;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* ============ 模板操作按钮 ============
+ * 描边卡片，不跟下面那个主按钮抢视觉。 */
+.tpl-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 32rpx;
+}
+
+.tpl-action {
+  flex: 1;
+  height: 92rpx;
+  border-radius: var(--r-md);
+  border: 2rpx solid var(--line);
+  background: var(--card);
+  font-size: 29rpx;
+  font-weight: 500;
+  color: var(--text-1);
+  line-height: 88rpx;
+  text-align: center;
+  transition: all var(--dur) var(--ease);
+}
+
+/* 单独一行时不受 flex 影响，自己撑开 */
+.tpl-action--wide {
+  margin-top: 32rpx;
+}
+
+.tpl-action--hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tpl-action--danger {
+  color: var(--danger);
+}
+
+.tpl-action--danger-hover {
+  background: #fef5f4;
+  border-color: var(--danger);
+}
+
+/* ============ 中奖庆祝 ============
+ * 整段压在 1s 内：震动最长 0.55s，emoji 最迟 0.10s 延迟 + 0.82s 时长 = 0.92s。
+ * 时长要和 wheel.js 的 CELEBRATE_DURATION 对得上，那边负责摘节点。
+ * emoji 的起飞高度/大小/快慢/字符全由 JS 随机（buildCelebration），
+ * 这里只提供 8 条固定弧线 —— 随机的是「挑哪条」和「从哪儿起飞」。 */
+
+/* 左右抖几下。位移刻意做得很小（最大 8rpx）——
+ * 再大就不像「震」，像页面卡了一下。 */
+@keyframes celebrate-shake {
+  0%, 100% { transform: translateX(0); }
+  12% { transform: translateX(-8rpx); }
+  26% { transform: translateX(7rpx); }
+  40% { transform: translateX(-5rpx); }
+  54% { transform: translateX(4rpx); }
+  70% { transform: translateX(-2rpx); }
+  85% { transform: translateX(1rpx); }
+}
+
+.pad--shake {
+  animation: celebrate-shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.celebrate {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none; /* 纯装饰，别挡住下面的点击 */
+  z-index: 500; /* 在页面所有弹层之上，见 app.wxss 的层级刻度 */
+}
+
+/* animation-name / -timing-function 放 class，duration / delay 由 JS 内联覆盖。
+ * 全程不用 animation 简写 —— 简写会把 duration 一起重置回默认值，容易打架。 */
+.emoji {
+  position: absolute;
+  line-height: 1;
+  opacity: 0;
+  animation-duration: 0.8s; /* 默认值，实际被内联的随机时长盖掉 */
+  animation-fill-mode: both;
+  /* 提前提成独立合成层。不提的话每帧都要重绘 .celebrate 这张全屏覆盖层 ——
+   * 全屏重绘就是卡顿的来源。提层之后 translate/scale/rotate/opacity
+   * 全在合成器上跑，不碰主线程。 */
+  will-change: transform, opacity;
+}
+
+.emoji--left { left: 0; }
+.emoji--right { right: 0; }
+
+/* 斜上抛：从屏幕左右边缘外斜着抛进来（仰角约 50°），升到最高点后失去动力，
+ * 接下来就是自由落体 —— 一路加速往下，从底端掉出屏幕。
+ *
+ * 每段各自带 animation-timing-function：上升段减速（越升越慢），下落段加速
+ * （越掉越快）。一个总缓动做不出这个转折，抛物线就散了。
+ * 顶点两侧（30% 和 48%）的 y 故意靠得近，就是为了让那个「顿一下」看得出来。
+ *
+ * 这不是严格抛物线：一个关键帧的缓动同时管 x 和 y，下落加速时横向也跟着加速。
+ * 严格抛物线要「横向匀速 + 纵向加速」，得给每个 emoji 再嵌一层元素把 x/y 拆开。
+ * 这里横向总位移只占纵向的 8%~15%，屏幕上看不出差别，不值得多套一层。
+ *
+ * 下落距离用 rpx 不用 vh —— 和文件里其它单位统一，也不用赌 vh 的支持。
+ * 1700rpx 约一屏出头，从最高那条带（36%）出发也能在动画结束前掉出屏底。
+ * 起点低的先掉出去，这本来就符合物理，不用对齐。
+ *
+ * 末帧刻意不写 opacity: 0 —— .celebrate 有 overflow: hidden，越过底边会被裁掉，
+ * 那才是「掉出屏幕」。加了淡出就成了「快到底时慢慢淡没」，完全不是一回事。
+ */
+@keyframes fall-left-a {
+  0% { transform: translate(-80rpx, 56rpx) rotate(-40deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(140rpx, -190rpx) rotate(-18deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(215rpx, -300rpx) rotate(4deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(285rpx, 260rpx) rotate(32deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(355rpx, 1700rpx) rotate(64deg); }
+}
+
+@keyframes fall-left-b {
+  0% { transform: translate(-80rpx, 70rpx) rotate(-52deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(115rpx, -250rpx) rotate(-24deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(175rpx, -360rpx) rotate(-2deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(245rpx, 230rpx) rotate(36deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(315rpx, 1700rpx) rotate(72deg); }
+}
+
+@keyframes fall-left-c {
+  0% { transform: translate(-80rpx, 20rpx) rotate(-30deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(165rpx, -120rpx) rotate(-12deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(250rpx, -215rpx) rotate(8deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(335rpx, 270rpx) rotate(28deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(410rpx, 1700rpx) rotate(58deg); }
+}
+
+@keyframes fall-left-d {
+  0% { transform: translate(-80rpx, 60rpx) rotate(-46deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(95rpx, -230rpx) rotate(-20deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(140rpx, -340rpx) rotate(0deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(190rpx, 250rpx) rotate(34deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(245rpx, 1700rpx) rotate(68deg); }
+}
+
+/* 右侧四条：镜像 —— x 取反、旋转取反，仰角和射程一一对应 */
+@keyframes fall-right-a {
+  0% { transform: translate(80rpx, 56rpx) rotate(40deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(-140rpx, -190rpx) rotate(18deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(-215rpx, -300rpx) rotate(-4deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(-285rpx, 260rpx) rotate(-32deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(-355rpx, 1700rpx) rotate(-64deg); }
+}
+
+@keyframes fall-right-b {
+  0% { transform: translate(80rpx, 70rpx) rotate(52deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(-115rpx, -250rpx) rotate(24deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(-175rpx, -360rpx) rotate(2deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(-245rpx, 230rpx) rotate(-36deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(-315rpx, 1700rpx) rotate(-72deg); }
+}
+
+@keyframes fall-right-c {
+  0% { transform: translate(80rpx, 20rpx) rotate(30deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(-165rpx, -120rpx) rotate(12deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(-250rpx, -215rpx) rotate(-8deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(-335rpx, 270rpx) rotate(-28deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(-410rpx, 1700rpx) rotate(-58deg); }
+}
+
+@keyframes fall-right-d {
+  0% { transform: translate(80rpx, 60rpx) rotate(46deg); opacity: 0;
+       animation-timing-function: cubic-bezier(0.2, 0.8, 0.5, 1); }
+  30% { transform: translate(-95rpx, -230rpx) rotate(20deg); opacity: 1;
+        animation-timing-function: cubic-bezier(0.35, 0.65, 0.65, 1); }
+  48% { transform: translate(-140rpx, -340rpx) rotate(0deg);
+        animation-timing-function: cubic-bezier(0.45, 0.15, 0.8, 0.7); }
+  72% { transform: translate(-190rpx, 250rpx) rotate(-34deg);
+        animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+  100% { transform: translate(-245rpx, 1700rpx) rotate(-68deg); }
+}
+
+/* 缓动已经写进各关键帧里了，这里只负责挑哪一条轨迹 */
+.emoji--arc-left-a { animation-name: fall-left-a; }
+.emoji--arc-left-b { animation-name: fall-left-b; }
+.emoji--arc-left-c { animation-name: fall-left-c; }
+.emoji--arc-left-d { animation-name: fall-left-d; }
+.emoji--arc-right-a { animation-name: fall-right-a; }
+.emoji--arc-right-b { animation-name: fall-right-b; }
+.emoji--arc-right-c { animation-name: fall-right-c; }
+.emoji--arc-right-d { animation-name: fall-right-d; }

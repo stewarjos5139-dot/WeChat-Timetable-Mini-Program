@@ -1,0 +1,207 @@
+<!--pages/wheel/wheel.wxml-->
+<view class="page">
+  <view class="pad {{shakeClass}}">
+
+    <!-- 转盘区 -->
+    <view class="wheel-wrap">
+      <!-- 标题优先级：转动中 > 结果 > 当前模板名 > 默认提示 -->
+      <view class="wheel-title">{{spinning ? '转盘决定中…' : (result ? '🎉 结果：' + result : (templateName || '添加选项后开始转盘'))}}</view>
+
+      <view class="wheel-container">
+        <!-- 转盘底座装饰 -->
+        <view class="wheel-base"></view>
+
+        <!-- 转盘本体：用 transform 旋转 -->
+        <view class="wheel {{spinning ? 'wheel--spinning' : ''}}" style="transform: rotate({{rotation}}deg)">
+          <!-- 扇形层：两层裁切拼出扇形，见 wheel.wxss 的 .slice 注释 -->
+          <view
+            class="slice {{item.fullClass}} tone{{index % 7}}"
+            wx:for="{{options}}"
+            wx:key="index"
+            style="transform: rotate({{item.angle}}deg)"
+          >
+            <view class="slice-half">
+              <view class="slice-wedge" style="{{item.wedgeStyle}}">
+                <view class="slice-fill"></view>
+              </view>
+            </view>
+            <view class="slice-content" style="transform: rotate({{item.textAngle}}deg)">
+              <text class="slice-text">{{item.text}}</text>
+            </view>
+          </view>
+
+          <!-- 没有选项时的占位 -->
+          <view class="wheel-empty" wx:if="{{!options.length}}">
+            <text class="wheel-empty-text">还没有选项</text>
+          </view>
+        </view>
+
+        <!-- 中心指针：一个朝上的三角，指着 12 点那一格。
+             空盘时不显示，不然会和「还没有选项」叠在一起 -->
+        <view class="pointer" wx:if="{{options.length}}"></view>
+      </view>
+
+      <!-- 开始转盘按钮 -->
+      <view
+        class="spin-action {{options.length < 2 ? 'spin-action--disabled' : ''}}"
+        bindtap="onSpin"
+        hover-class="{{options.length >= 2 ? 'btn--hover' : ''}}"
+        hover-stay-time="60"
+        aria-role="button"
+      >{{spinning ? '转动中…' : (options.length < 2 ? '至少添加 2 个选项' : '开始转盘')}}</view>
+    </view>
+
+    <!-- 模板：内置的和自建的在同一排。点一下选中并装填，再点一下取消选中 -->
+    <view class="section">
+      <view class="section-head">
+        <text class="section-title">快捷模板</text>
+      </view>
+
+      <view class="templates">
+        <view
+          class="tpl-chip {{currentTpl && currentTpl.id === item.id ? 'tpl-chip--on' : ''}}"
+          wx:for="{{templates}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onTemplate"
+          hover-class="tpl-chip--hover"
+          hover-stay-time="60"
+          aria-role="button"
+        >{{item.name}}</view>
+
+        <!-- 末尾的「＋」：先起名，建一个空模板并直接选中它 -->
+        <view
+          class="tpl-chip tpl-chip--add"
+          bindtap="onNewTemplate"
+          hover-class="tpl-chip--hover"
+          hover-stay-time="60"
+          aria-role="button"
+          aria-label="新建模板"
+        >＋</view>
+      </view>
+    </view>
+
+    <!-- 选项列表 -->
+    <view class="section">
+      <view class="section-head">
+        <text class="section-title">我的选项 ({{options.length}}/8)</text>
+      </view>
+
+      <!-- 添加输入：放在列表上方，新加的选项就落在它下面 -->
+      <view class="add-wrap">
+        <view class="add-input-wrap">
+          <input
+            class="add-input"
+            value="{{inputText}}"
+            bindinput="onInput"
+            bindconfirm="onAdd"
+            placeholder="{{options.length === 0 ? '在这里添加第一个选项' : '输入新选项'}}"
+            placeholder-class="ph"
+            maxlength="12"
+            disabled="{{options.length >= 8}}"
+            aria-label="输入新选项"
+          />
+        </view>
+        <view
+          class="add-btn {{options.length >= 8 || !inputText ? 'add-btn--disabled' : ''}}"
+          bindtap="onAdd"
+          hover-class="{{options.length < 8 && inputText ? 'add-btn--hover' : ''}}"
+          hover-stay-time="60"
+          aria-role="button"
+        >
+          <image class="add-btn-icon" src="/assets/icons/plus.svg" mode="aspectFit" />
+        </view>
+      </view>
+
+      <view class="add-hint" wx:if="{{options.length >= 8}}">最多 8 个选项</view>
+
+      <view class="card" wx:if="{{options.length}}">
+        <block wx:for="{{options}}" wx:key="index">
+          <view class="divide" wx:if="{{index > 0}}"></view>
+          <view
+            class="opt-row"
+            data-index="{{index}}"
+            bindtap="onEditOption"
+            hover-class="opt-row--hover"
+            hover-stay-time="60"
+          >
+            <view class="opt-dot tone{{index % 7}}"></view>
+
+            <!-- 点一下就地改成输入框，不用删了重加 -->
+            <input
+              wx:if="{{editingIndex === index}}"
+              class="opt-input"
+              value="{{editText}}"
+              focus="{{true}}"
+              maxlength="12"
+              confirm-type="done"
+              data-index="{{index}}"
+              bindinput="onEditInput"
+              bindconfirm="onEditCommit"
+              bindblur="onEditCommit"
+            />
+            <text wx:else class="opt-text">{{item.text}}</text>
+
+            <view
+              class="opt-del"
+              data-index="{{index}}"
+              catchtap="onDeleteOption"
+              hover-class="opt-del--hover"
+              hover-stay-time="60"
+              aria-role="button"
+              aria-label="删除"
+            >
+              <image class="opt-del-icon" src="/assets/icons/close.svg" mode="aspectFit" />
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <view class="add-hint" wx:if="{{options.length}}">点任意一行可以直接改文字</view>
+
+      <!-- 选中了模板 → 保存修改 / 删除该模板；没选中 → 只给「存储为模板」 -->
+      <view class="tpl-actions" wx:if="{{currentTpl}}">
+        <view
+          class="tpl-action"
+          bindtap="onUpdateTemplate"
+          hover-class="tpl-action--hover"
+          hover-stay-time="60"
+          aria-role="button"
+        >保存修改</view>
+        <view
+          class="tpl-action tpl-action--danger"
+          bindtap="onDeleteTemplate"
+          hover-class="tpl-action--danger-hover"
+          hover-stay-time="60"
+          aria-role="button"
+        >删除该模板</view>
+      </view>
+
+      <view
+        class="tpl-action tpl-action--wide"
+        wx:else
+        bindtap="onSaveTemplate"
+        hover-class="tpl-action--hover"
+        hover-stay-time="60"
+        aria-role="button"
+      >存储为模板</view>
+    </view>
+
+  </view>
+
+  <view class="tabbar-space"></view>
+</view>
+
+<!-- 中奖庆祝：emoji 从屏幕左右两侧蹦出来。
+     起飞高度/大小/快慢/用什么 emoji 都由 JS 随机（wheel.js 的 buildCelebration），
+     这里只负责把每一条挂到对应的弧线 class 上。
+     必须放在 .page 外面 —— 震动是给 .pad 加 transform，
+     而 transform 会让里面 position: fixed 的元素改成相对它定位 -->
+<view class="celebrate" wx:if="{{celebrating}}">
+  <text
+    class="emoji emoji--{{item.side}} emoji--{{item.arc}}"
+    wx:for="{{celebration}}"
+    wx:key="id"
+    style="{{item.style}}"
+  >{{item.char}}</text>
+</view>

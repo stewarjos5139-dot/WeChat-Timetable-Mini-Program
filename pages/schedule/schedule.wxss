@@ -332,16 +332,22 @@
 
 .gutter-idx {
   font-size: 22rpx;
-  font-weight: 500;
-  line-height: 1.2;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-2);
+}
+
+/* 上课 / 下课时间：上下并列，上面是开始、下面是结束 */
+.gutter-time {
+  font-size: 17rpx;
+  line-height: 1.15;
   color: var(--text-3);
 }
 
-.gutter-time {
-  margin-top: 4rpx;
-  font-size: 18rpx;
-  line-height: 1.2;
-  color: var(--text-3);
+/* 上课时间比下课时间深一档 —— 扫一眼先看到「几点开始」 */
+.gutter-time--from {
+  margin-top: 8rpx;
+  color: var(--text-2);
 }
 
 /* ---- 每天的课程列：只画横线，不画竖线 ---- */

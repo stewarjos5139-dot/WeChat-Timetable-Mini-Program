@@ -98,7 +98,7 @@ scroll-view {
   letter-spacing: 2rpx;
 }
 
-/* ---------- 列表行（mine / library 共用） ---------- */
+/* ---------- 列表行（mine / wheel 共用） ---------- */
 .row {
   min-height: 104rpx;
   padding: 0 28rpx;

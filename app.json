@@ -1,7 +1,7 @@
 {
   "pages": [
     "pages/schedule/schedule",
-    "pages/library/library",
+    "pages/wheel/wheel",
     "pages/mine/mine",
     "pages/login/login"
   ],
@@ -23,8 +23,8 @@
         "text": "课表"
       },
       {
-        "pagePath": "pages/library/library",
-        "text": "图书馆"
+        "pagePath": "pages/wheel/wheel",
+        "text": "决策"
       },
       {
         "pagePath": "pages/mine/mine",

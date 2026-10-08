@@ -63,8 +63,8 @@
     <view class="gutter">
       <view class="gutter-cell" wx:for="{{sections}}" wx:key="i" style="height: {{rowH}}rpx;">
         <text class="gutter-idx num">{{item.i}}</text>
-        <!-- 节次起止时间暂缺；补进 SECTIONS 后这行会自动出现 -->
-        <text class="gutter-time num" wx:if="{{item.from}}">{{item.from}}</text>
+        <text class="gutter-time gutter-time--from num">{{item.from}}</text>
+        <text class="gutter-time num">{{item.to}}</text>
       </view>
     </view>
 

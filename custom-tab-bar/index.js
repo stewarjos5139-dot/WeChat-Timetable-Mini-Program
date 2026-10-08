@@ -7,7 +7,7 @@ Component({
     // 图标在 /assets/icons，未选中为线性灰、选中为实心墨蓝
     list: [
       { pagePath: '/pages/schedule/schedule', text: '课表', icon: 'tab-schedule' },
-      { pagePath: '/pages/library/library', text: '图书馆', icon: 'tab-library' },
+      { pagePath: '/pages/wheel/wheel', text: '决策', icon: 'tab-wheel' },
       { pagePath: '/pages/mine/mine', text: '我的', icon: 'tab-mine' }
     ]
   },
