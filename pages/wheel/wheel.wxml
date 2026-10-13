@@ -1,6 +1,8 @@
 <!--pages/wheel/wheel.wxml-->
 <view class="page">
-  <view class="pad {{shakeClass}}">
+  <!-- 抖动的类必须跟着「中奖」走，不能一进页面就挂上 ——
+       CSS 动画在元素拿到类的那一刻就跑，写死的话只会在进页面时抖一下 -->
+  <view class="pad {{shaking ? 'pad--shake' : ''}}">
 
     <!-- 转盘区 -->
     <view class="wheel-wrap">

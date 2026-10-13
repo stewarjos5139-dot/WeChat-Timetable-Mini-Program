@@ -76,12 +76,23 @@ Page({
   // ============ 从云端恢复 ============
 
   /**
+   * 按学号找云端那条备份（一条记录一个学号）。本机没学号时 cloud.restore 会返回
+   * no-account，弹窗里会说清楚差什么。
+   *
+   * 「重装后手动输入学号找回」那个入口还没做，之后单独设计 ——
+   * cloud.restore 已经留了参数位，到时候只用改这一层。
+   */
+  onRestoreFromCloud() {
+    this.confirmRestore()
+  },
+
+  /**
    * 本机是空的就直接恢复 —— 没什么可覆盖的，多一次确认只是碍事。
    * 本机有课表才先确认，因为会把手动加过的课一起盖掉。
    */
-  onRestoreFromCloud() {
+  confirmRestore(studentId) {
     if (!store.getCourses().length) {
-      this.doRestore()
+      this.doRestore(studentId)
       return
     }
 
@@ -90,14 +101,14 @@ Page({
       content: '会用云端备份覆盖本机课表，你手动添加和编辑过的课程也会被覆盖。',
       confirmText: '恢复',
       confirmColor: '#2F4A8A',
-      success: res => { if (res.confirm) this.doRestore() }
+      success: res => { if (res.confirm) this.doRestore(studentId) }
     })
   },
 
-  doRestore() {
+  doRestore(studentId) {
     wx.showLoading({ title: '正在恢复', mask: true })
 
-    cloud.restore().then(res => {
+    cloud.restore(studentId).then(res => {
       wx.hideLoading()
 
       if (res.ok) {
@@ -106,10 +117,11 @@ Page({
         return
       }
 
-      // 四种失败分开说 —— 笼统一句「失败」，用户不知道下一步该干嘛
+      // 每种失败分开说 —— 笼统一句「失败」，用户不知道下一步该干嘛
       const tips = {
         'no-backend': ['云服务未配置', '当前没有配置云开发环境，云端备份用不了。'],
-        'no-backup': ['云端没有备份', '这个微信账号在云端还没有课表备份。导入一次课表后会自动上传。'],
+        'no-account': ['还不知道学号', '云端备份按学号存，得先知道学号才能找。在课表页导入一次课表就有了。'],
+        'no-backup': ['云端没有备份', '这个学号在云端还没有课表备份。导入一次课表后会自动上传。'],
         'schema': ['备份版本不兼容', '云端备份是旧版本存的，当前版本读不了。重新导入一次课表就能覆盖它。'],
         'error': ['恢复失败', (res.message || '网络异常') + '\n\n请检查网络后重试。']
       }

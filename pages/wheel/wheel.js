@@ -29,11 +29,22 @@ const SLICE_GAP = 0.6
  *  （延迟 ≤0.10s + 时长 ≤0.82s），这个值只用来决定几时把 emoji 节点摘掉。 */
 const CELEBRATE_DURATION = 950
 
-/** 页面震动开关。
- *  暂时关掉：震的是 .pad 这个整页高的大块，会被提成一张超大合成层，
- *  中奖那一下明显掉帧。样式和关键帧都原样留着（wheel.wxss 的 .pad--shake
- *  和 @keyframes celebrate-shake），想开改回 true 就行。 */
-const ENABLE_SHAKE = false
+/** 屏幕抖动的时长（毫秒）。要和 wheel.wxss 里 .pad--shake 的 animation 时长一致 */
+const SHAKE_DURATION = 550
+
+/** 页面震动（整屏抖一下）。
+ *  之前关过一阵，理由是「出现 emoji 时卡顿」。后来 emoji 也关掉了（ENABLE_EMOJI），
+ *  那一帧没有别的合成层跟它抢，重新打开。
+ *  如果再看到掉帧，把它改回 false 就行 —— 样式和关键帧都在
+ *  （wheel.wxss 的 .pad--shake 和 @keyframes celebrate-shake）。 */
+const ENABLE_SHAKE = true
+
+/** 中奖 emoji 开关。
+ *  关掉之后中奖只剩震动 + 标题显示结果。
+ *  相关代码全部原样留着（buildCelebration、wheel.wxml 的 .celebrate 那一块、
+ *  wheel.wxss 的 fall-* 关键帧），想开改回 true 就行 —— 关着的时候
+ *  celebrating 永远是 false，那些节点根本不会渲染。 */
+const ENABLE_EMOJI = false
 
 /** 每侧蹦几个 */
 const EMOJI_PER_SIDE = 3
@@ -183,9 +194,9 @@ Page({
     rotation: 0, // 当前转盘旋转角度
     spinning: false,
     result: '', // 当前选中结果
-    celebrating: false, // 中奖瞬间的震动 + emoji，跑完自动关掉
+    celebrating: false, // 中奖瞬间的 emoji 庆祝，跑完自动关掉（开关见 ENABLE_EMOJI）
     celebration: [], // 这一轮的 emoji 列表，中奖时才由 buildCelebration 生成
-    shakeClass: ENABLE_SHAKE ? 'pad--shake' : '' // 由开关定死，不用每次 setData
+    shaking: false // 中奖瞬间的整屏抖（开关见 ENABLE_SHAKE）
   },
 
   onLoad() {
@@ -456,11 +467,15 @@ Page({
       return
     }
 
-    // 上一轮庆祝还没收尾就再转：先把旧计时器掐掉，
+    // 上一轮的手势反馈还没收尾就再转：先把旧计时器掐掉，
     // 否则它到点会把这一轮的动画提前关掉
     if (this.celebrateTimer) {
       clearTimeout(this.celebrateTimer)
       this.celebrateTimer = null
+    }
+    if (this.shakeTimer) {
+      clearTimeout(this.shakeTimer)
+      this.shakeTimer = null
     }
 
     const options = this.data.options
@@ -496,7 +511,9 @@ Page({
     this.setData({
       spinning: true,
       result: '',
-      celebrating: false // 上一轮的 emoji 立刻收掉，别一直挂到这一轮转完
+      // 上一轮的反馈立刻收掉，别一直挂到这一轮转完
+      celebrating: false,
+      shaking: false
     })
 
     // 延迟一帧触发动画
@@ -504,25 +521,38 @@ Page({
       this.setData({ rotation: targetRotation })
     }, 50)
 
-    // 动画结束：震动 + 庆祝 + 显示结果
+    // 动画结束：震动 + 屏幕抖 + emoji + 显示结果。后两样各有各的开关
     setTimeout(() => {
       wx.vibrateShort({ type: 'medium' })
-      this.setData({
-        spinning: false,
-        result: winner.text,
-        celebrating: true,
-        celebration: buildCelebration()
-      })
-      // 动画跑完就把 emoji 节点摘掉，别留在那儿挡着
-      this.celebrateTimer = setTimeout(() => {
-        this.celebrateTimer = null
-        this.setData({ celebrating: false })
-      }, CELEBRATE_DURATION)
+
+      const patch = { spinning: false, result: winner.text }
+      if (ENABLE_SHAKE) patch.shaking = true
+      if (ENABLE_EMOJI) {
+        patch.celebrating = true
+        patch.celebration = buildCelebration()
+      }
+      this.setData(patch)
+
+      // 各跑各的时长，到点各自收掉。
+      // 抖动的类必须摘干净 —— 不摘的话下次中奖类名没变化，CSS 动画不会再触发
+      if (ENABLE_SHAKE) {
+        this.shakeTimer = setTimeout(() => {
+          this.shakeTimer = null
+          this.setData({ shaking: false })
+        }, SHAKE_DURATION)
+      }
+      if (ENABLE_EMOJI) {
+        this.celebrateTimer = setTimeout(() => {
+          this.celebrateTimer = null
+          this.setData({ celebrating: false })
+        }, CELEBRATE_DURATION)
+      }
     }, SPIN_DURATION + 100)
   },
 
   onUnload() {
     if (this.celebrateTimer) clearTimeout(this.celebrateTimer)
+    if (this.shakeTimer) clearTimeout(this.shakeTimer)
   },
 
   /**

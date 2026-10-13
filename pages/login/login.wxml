@@ -1,79 +1,42 @@
-<!--pages/login/login.wxml-->
+<!-- pages/login/login.wxml -->
 <view class="page">
-
   <!-- 说明头 -->
   <view class="intro">
     <text class="intro-title">导入课表</text>
     <text class="intro-sub">连接学校教务系统，自动抓取并解析本学期课表</text>
   </view>
-
   <!-- 账号 -->
   <view class="group-label">教务系统账号</view>
   <view class="card">
     <view class="field">
       <text class="field-label">学号</text>
-      <input
-        class="field-input num"
-        type="text"
-        value="{{studentId}}"
-        placeholder="请输入学号"
-        placeholder-class="ph"
-        bindinput="onIdInput"
-        aria-label="学号"
-      />
+      <input class="field-input num" type="text" value="{{studentId}}" placeholder="请输入学号" placeholder-class="ph" bindinput="onIdInput" aria-label="学号" />
     </view>
-
     <view class="divide"></view>
-
     <view class="field">
       <text class="field-label">密码</text>
-      <input
-        class="field-input"
-        password="{{true}}"
-        value="{{password}}"
-        placeholder="教务系统密码"
-        placeholder-class="ph"
-        bindinput="onPwdInput"
-        aria-label="密码"
-      />
+      <input class="field-input" password="{{true}}" value="{{password}}" placeholder="教务系统密码" placeholder-class="ph" bindinput="onPwdInput" aria-label="密码" />
     </view>
   </view>
-
   <!-- 学期 -->
   <view class="group-label">学期设置</view>
   <view class="card">
-    <picker
-      mode="selector"
-      range="{{yearOptions}}"
-      range-key="label"
-      value="{{yearIndex}}"
-      bindchange="onYearChange"
-    >
+    <picker mode="selector" range="{{yearOptions}}" range-key="label" value="{{yearIndex}}" bindchange="onYearChange">
       <view class="field" hover-class="field--hover" hover-stay-time="60">
         <text class="field-label">学年</text>
         <text class="field-value num">{{yearOptions[yearIndex].label}}</text>
         <image class="field-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
       </view>
     </picker>
-
     <view class="divide"></view>
-
-    <picker
-      mode="selector"
-      range="{{termOptions}}"
-      range-key="label"
-      value="{{termIndex}}"
-      bindchange="onTermChange"
-    >
+    <picker mode="selector" range="{{termOptions}}" range-key="label" value="{{termIndex}}" bindchange="onTermChange">
       <view class="field" hover-class="field--hover" hover-stay-time="60">
         <text class="field-label">学期</text>
         <text class="field-value">{{termOptions[termIndex].label}}</text>
         <image class="field-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
       </view>
     </picker>
-
     <view class="divide"></view>
-
     <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
       <view class="field" hover-class="field--hover" hover-stay-time="60">
         <text class="field-label">开学周一</text>
@@ -82,38 +45,55 @@
       </view>
     </picker>
   </view>
-
   <view class="form-hint">「开学周一」填本学期第 1 周的周一。课表靠它推算每个星期的日期，填错会让整张表的周次和日期偏移。</view>
-
   <!-- 提交 -->
-  <view
-    class="btn submit {{backendReady ? '' : 'submit--off'}}"
-    bindtap="onSubmit"
-    hover-class="btn--hover"
-    hover-stay-time="60"
-    aria-role="button"
-  >
-    <text wx:if="{{loading}}">正在导入…</text>
+  <view class="btn submit {{backendReady ? '' : 'submit--off'}}" bindtap="onSubmit" hover-class="btn--hover" hover-stay-time="60" aria-role="button">
+    <text wx:if="{{loading}}">{{loadingText}}</text>
     <text wx:else>导入课表</text>
   </view>
-
   <!-- 后端未配置的提示 -->
   <view class="notice" wx:if="{{!backendReady}}">
     <view class="notice-head">
       <image class="notice-icon" src="/assets/icons/alert.svg" mode="aspectFit" />
       <text class="notice-title">中间层尚未配置</text>
     </view>
-    <text class="notice-text">导入课表需要先连上中间层服务。在 utils/config.js 里填上云托管的环境 ID 和服务名，或自建服务的地址即可启用，其余代码无需改动。</text>
+    <text class="notice-text">
+      导入课表需要先连上中间层服务。在 utils/config.js 里填上云托管的环境 ID 和服务名，或自建服务的地址即可启用，其余代码无需改动。
+    </text>
   </view>
-
   <!-- 隐私说明 -->
   <view class="privacy">
     <view class="privacy-head">
       <image class="privacy-icon" src="/assets/icons/lock.svg" mode="aspectFit" />
       <text class="privacy-title">关于你的账号安全</text>
     </view>
-    <text class="privacy-item">· 密码不会保存在本机，本机只记住学号</text>
+    <text class="privacy-item">· 密码不会被保存，本机只记住学号</text>
     <text class="privacy-item">· 导入时密码会经由中间层服务转发给学校教务系统</text>
     <text class="privacy-item">· 请确认你信任该服务，再输入密码</text>
+  </view>
+</view>
+<!-- ============ 导入结果 ============
+     成功和失败共用一张卡片，只有图标、文案、按钮不同。
+     放在 .page 外面 —— 它是浮层，不该被页面内容影响。
+     点卡片外面不关闭：两个按钮的主次不一样，误触关掉会让人搞不清刚才点了什么 -->
+<view class="dialog" wx:if="{{result}}" catchtouchmove="noop" catchtap="noop">
+  <view class="dialog-card" aria-role="dialog" aria-label="{{result.title}}">
+    <view class="dialog-close" data-key="dismiss" bindtap="onResultAction" hover-class="dialog-close--hover" hover-stay-time="60" aria-role="button" aria-label="关闭">
+      <image class="dialog-close-icon" src="/assets/icons/close.svg" mode="aspectFit" />
+    </view>
+    <!-- 成功是墨蓝实心圆压白勾，失败是暖黄圆压感叹号 -->
+    <view class="dialog-badge {{result.ok ? 'dialog-badge--ok' : 'dialog-badge--warn'}}">
+      <image class="dialog-badge-icon" src="{{result.ok ? '/assets/icons/check.svg' : '/assets/icons/alert.svg'}}" mode="aspectFit" />
+    </view>
+    <text class="dialog-title">{{result.title}}</text>
+    <text class="dialog-line {{item.strong ? 'dialog-line--strong' : ''}}" wx:for="{{result.lines}}" wx:key="index">
+      {{item.text}}
+    </text>
+    <!-- 按钮统一走 .btn--ghost（白底蓝字）。主次靠排列顺序表达，不靠配色 -->
+    <view class="dialog-actions {{result.actions.length > 1 ? 'dialog-actions--row' : ''}}">
+      <view class="btn btn--ghost" wx:for="{{result.actions}}" wx:key="key" data-key="{{item.key}}" bindtap="onResultAction" hover-class="btn--ghost-hover" hover-stay-time="60" aria-role="button">
+        {{item.label}}
+      </view>
+    </view>
   </view>
 </view>

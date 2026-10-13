@@ -7,8 +7,10 @@
  *
  * 所有函数都**不往外抛异常**：云上出问题不能让小程序本身不能用。
  *
- * 依赖云开发数据库，集合名见 COLLECTION —— 需要在云开发控制台手工建，
- * 权限必须选「仅创建者可读写」。
+ * 一条记录的 **_id 就是学号** —— 一个学号一条，物理上不可能重复；
+ * 写入走 set（覆盖式），连着触发两次也不会多出一条。
+ * 集合权限仍是「仅创建者可读写」，所以查询只会命中自己那条，
+ * 别人就算知道学号也读不到。
  */
 
 const config = require('./config')
@@ -26,27 +28,47 @@ function available() {
   return !!(config.CLOUD_ENV && wx.cloud && wx.cloud.database)
 }
 
+/** 本机存的学号。没导入过课表就是空串 */
+function localId() {
+  const profile = store.getProfile()
+  return String((profile && profile.studentId) || '').trim()
+}
+
 /**
- * 取当前用户那条文档。默认权限下 .get() 只会返回自己的数据。
- * limit(1) 是为了避开客户端默认 20 条的限制。
+ * 按学号取那条文档。
+ *
+ * 用 where({_id}) 而不是 doc(id).get()：后者在文档不存在时是**报错**，
+ * 得去猜错误码才知道是「没备份」还是「网络挂了」；where 查不到就是空数组，
+ * 两种情况天然分得开。
+ *
+ * 查询别人的文档会被权限挡掉，同样落到空数组 —— 从我的角度那就是「没备份」。
  */
-function findDoc() {
-  return wx.cloud.database().collection(COLLECTION).limit(1).get()
+function findDoc(studentId) {
+  return wx.cloud.database().collection(COLLECTION)
+    .where({ _id: studentId })
+    .limit(1)
+    .get()
     .then(function (res) {
       return (res.data && res.data[0]) || null
     })
 }
 
 /**
- * 把本地三样（课表 / 学期设置 / 姓名学号）打包上传。
- * 有文档就更新，没有就新建。
+ * 把本地四样（学号 / 课表 / 学期设置 / 姓名）打包上传。
+ * 学号当 _id，set 是覆盖式的 —— 有就整体替换，没有就新建，不会越堆越多。
+ *
+ * **没有学号就跳过**：不知道往哪条上写。没导入过课表的话本来也没什么可备份的。
  *
  * 失败**静默** —— 用户没主动要求备份，不该被弹窗打断，下次数据变化再补上。
  */
 function backup() {
   if (!available()) return Promise.resolve()
 
+  const studentId = localId()
+  if (!studentId) return Promise.resolve()
+
   const payload = {
+    studentId: studentId,
     courses: store.getCourses(),
     term: store.getTerm(),
     profile: store.getProfile(),
@@ -54,13 +76,9 @@ function backup() {
     updatedAt: Date.now()
   }
 
-  const db = wx.cloud.database()
-
-  return findDoc()
-    .then(function (doc) {
-      if (doc) return db.collection(COLLECTION).doc(doc._id).update({ data: payload })
-      return db.collection(COLLECTION).add({ data: payload })
-    })
+  return wx.cloud.database().collection(COLLECTION)
+    .doc(studentId)
+    .set({ data: payload })
     .catch(function (err) {
       console.warn('[cloud] 备份失败（已忽略）:', (err && err.errMsg) || err)
     })
@@ -69,20 +87,30 @@ function backup() {
 /**
  * 从云端写回本地。
  *
+ * @param {string} [studentId] 要恢复哪个学号的备份。不传就用本机存的。
+ *   目前调用方一律不传 —— 「重装后手动输学号」的入口还没做，之后单独设计。
+ *   参数位先留着，到时候只用改「我的」那一层。
+ *
  * @returns {Promise<{ok: boolean, count: number, reason: string, message?: string}>}
  *   reason 取值：
- *     ''          成功
+ *     ''           成功
  *     'no-backend' 没配云环境
- *     'no-backup' 云端没有备份（或备份是空的）
- *     'schema'    备份版本不认
- *     'error'     网络 / 其他错误，message 里有原因
+ *     'no-account' 不知道该找哪个学号（本机没有，调用方也没给）
+ *     'no-backup'  云端没有这个学号的备份（或备份是空的）
+ *     'schema'     备份版本不认
+ *     'error'      网络 / 其他错误，message 里有原因
  */
-function restore() {
+function restore(studentId) {
   if (!available()) {
     return Promise.resolve({ ok: false, count: 0, reason: 'no-backend' })
   }
 
-  return findDoc()
+  const id = String(studentId || '').trim() || localId()
+  if (!id) {
+    return Promise.resolve({ ok: false, count: 0, reason: 'no-account' })
+  }
+
+  return findDoc(id)
     .then(function (doc) {
       if (!doc) return { ok: false, count: 0, reason: 'no-backup' }
       if (doc.schemaVersion !== SCHEMA_VERSION) return { ok: false, count: 0, reason: 'schema' }

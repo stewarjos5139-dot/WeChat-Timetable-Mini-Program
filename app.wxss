@@ -177,6 +177,136 @@ scroll-view {
   transform: scale(0.985);
 }
 
+/* ---------- 结果弹窗 ----------
+ * 居中卡片，用在「给个结果 + 让用户决定下一步」的地方（目前只有导入课表）。
+ * 内部按钮直接复用上面的 .btn / .btn--ghost。
+ *
+ * 它和 pages/schedule 的 .guide-card 是同一族视觉（同样的圆角 / 描边 / 阴影 /
+ * 内边距）。那边是空课表引导专用的，带蒙层和网格模糊，所以没合并到这儿 ——
+ * 改这边的时候顺手看一眼那边，别让两张卡片长得越来越不像。 */
+@keyframes dialog-mask-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(24rpx) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dialog {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-mask);
+  padding: 0 72rpx;
+  background: rgba(28, 28, 30, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: dialog-mask-in 0.24s ease;
+}
+
+.dialog-card {
+  position: relative;
+  width: 100%;
+  max-width: 560rpx;
+  padding: 52rpx 44rpx 40rpx;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  box-shadow: 0 20rpx 60rpx rgba(28, 28, 30, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: dialog-in 0.28s var(--ease);
+}
+
+/* 右上角关闭：图标 28rpx，热区 72rpx */
+.dialog-close {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-close--hover {
+  background: var(--fill);
+}
+
+.dialog-close-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+/* 结果徽章。成功是墨蓝实心圆压白勾；失败是暖黄圆压感叹号 —— 用的都是现成图标 */
+.dialog-badge {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-badge--ok {
+  background: var(--accent);
+}
+
+.dialog-badge--warn {
+  background: var(--warn-bg);
+  border: 1rpx solid var(--warn-line);
+}
+
+.dialog-badge-icon {
+  width: 52rpx;
+  height: 52rpx;
+}
+
+.dialog-title {
+  margin-top: 28rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+/* 明细行：一行一条，居中。默认次要灰，加 --strong 的抬到正文色 */
+.dialog-line {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: var(--text-2);
+  text-align: center;
+}
+
+.dialog-line--strong {
+  margin-top: 16rpx;
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+.dialog-actions {
+  width: 100%;
+  margin-top: 44rpx;
+}
+
+/* 两个按钮并排 */
+.dialog-actions--row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.dialog-actions--row .btn {
+  flex: 1;
+}
+
 /* ---------- 安全说明（login / mine 共用） ---------- */
 .privacy {
   margin-top: 48rpx;
