@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const d=new Date\\(2026,8,7\\);console.log\\(d.toString\\(\\), d.getDay\\(\\)\\)\")",
+      "Bash(node --check pages/schedule/schedule.js)",
+      "Bash(node --check utils/store.js)",
+      "Bash(node /tmp/sched-test/run.js)",
+      "Bash(node /tmp/sched-test/run2.js)",
+      "Bash(node --check cloudfunctions/reminder/timetable.js)",
+      "Bash(node --check cloudfunctions/reminder/index.js)",
+      "Bash(node --check cloudfunctions/reminder/config.js)",
+      "Bash(node --check utils/reminder.js)",
+      "Bash(node --check pages/mine/mine.js)",
+      "Read(//tmp/**)",
+      "Bash(python -)",
+      "Bash(node /tmp/reminder-test/run2.js)",
+      "Bash(rm -rf /tmp/reminder-test)",
+      "Bash(node --check utils/config.js)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('project.config.json','utf8'\\)\\);console.log\\('project.config.json OK'\\)\")",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

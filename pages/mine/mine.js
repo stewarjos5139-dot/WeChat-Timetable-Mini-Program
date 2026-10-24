@@ -1,14 +1,31 @@
 // pages/mine/mine.js
+const config = require('../../utils/config')
 const store = require('../../utils/store')
 const cloud = require('../../utils/cloud')
+const reminder = require('../../utils/reminder')
 
 const VERSION = '0.2.0'
+
+/** 可选的课前提醒分钟数，来自 utils/reminder.js（与服务端白名单一致） */
+const LEAD_OPTIONS = reminder.LEAD_OPTIONS
+const LEAD_LABELS = LEAD_OPTIONS.map(function (m) { return m + ' 分钟' })
 
 Page({
   data: {
     version: VERSION,
     hasSchedule: false,
     termText: '',
+
+    // 公众号入口。没配原始 ID 时整行不渲染
+    officialAccount: config.OFFICIAL_ACCOUNT,
+
+    // 上课提醒
+    remindOn: false,          // 开关
+    remindQuota: 0,           // 剩余可发条数
+    remindQuotaText: '未开启', // 次数那一行的右侧文案
+    remindLead: reminder.DEFAULT_LEAD,
+    leadLabels: LEAD_LABELS,
+    leadIndex: LEAD_OPTIONS.indexOf(reminder.DEFAULT_LEAD),
 
     // 用户档案：导入课表时从教务系统拿到姓名和学号，存在本地。
     // 从没导入过时 loggedIn 为 false，其余为空。
@@ -23,6 +40,7 @@ Page({
       this.getTabBar().setData({ selected: 2 })
     }
     this.refresh()
+    this.refreshReminder()
   },
 
   refresh() {
@@ -48,6 +66,177 @@ Page({
     })
   },
 
+  /* ─────────────── 上课提醒 ─────────────── */
+
+  /** 先用本地缓存渲染（秒开），再强制向云端确认 */
+  refreshReminder() {
+    const cache = reminder.readCache()
+    if (cache) this.applyReminder(cache)
+    // 次数可能刚被定时器扣到 0（服务端会自动关闭提醒），所以这里不走 5 分钟缓存
+    reminder.status(true).then(state => {
+      if (state) this.applyReminder(state)
+    })
+  },
+
+  applyReminder(state) {
+    // 服务端/缓存里没有提前量时沿用界面上的值，别把用户刚选的覆盖成缺省
+    const lead = reminder.normalizeLead(state && state.leadMinutes, this.data.remindLead)
+    const on = !!(state && state.enabled)
+    const quota = Math.max(0, Number(state && state.quota) || 0)
+
+    let quotaText = '未开启'
+    if (on) {
+      quotaText = (state.needSubscribe || quota <= 0) ? '已用完' : '还剩 ' + quota + ' 次'
+    }
+
+    this.setData({
+      remindOn: on,
+      remindQuota: quota,
+      remindQuotaText: quotaText,
+      remindLead: lead,
+      leadIndex: LEAD_OPTIONS.indexOf(lead)
+    })
+  },
+
+  /** 提醒功能没配置时的说明 */
+  showRemindSetup() {
+    wx.showModal({
+      title: '上课提醒未配置',
+      content: '需要先在公众平台选好订阅消息模板，并把模板 ID 填进 utils/config.js 和 cloudfunctions/reminder/config.js。步骤见《订阅消息提醒.md》。',
+      showCancel: false,
+      confirmText: '知道了',
+      confirmColor: '#2F4A8A'
+    })
+  },
+
+  /** 开启 / 续订失败时的统一提示 */
+  handleRemindError(res) {
+    // 云端没有课表备份，提醒发不出去 —— 说清楚怎么补
+    if (res.reason === 'no-schedule') {
+      wx.showModal({
+        title: '课表还没同步到云端',
+        content: '提醒要用云端那份课表。请先重新导入一次课表，或随便编辑一门课让它自动上传，再来开启提醒。',
+        showCancel: false,
+        confirmText: '知道了',
+        confirmColor: '#2F4A8A'
+      })
+      return
+    }
+
+    // 本地缓存偏旧：服务端其实已经没次数了。
+    // 刷新一次缓存，用户再点一下就会走订阅授权
+    if (res.reason === 'no-quota') {
+      reminder.status(true)
+      wx.showToast({ title: '次数不足，再点一次开启', icon: 'none' })
+      return
+    }
+
+    const tips = {
+      'no-accept': '需要授权才能提醒',
+      'not-owner': '请先导入自己的课表',
+      'not-enabled': '先开启提醒',
+      'network': '网络异常，稍后再试',
+      'unsupported': '提醒功能未配置'
+    }
+    wx.showToast({ title: tips[res.reason] || '操作失败，稍后再试', icon: 'none' })
+  },
+
+  /**
+   * 开关：没开就开启，已开就直接关闭（不再弹确认框）。
+   * 开启时必须在点击回调里同步调用 requestSubscribeMessage，
+   * 所以这一行之前不能有 await / 网络请求。
+   */
+  onRemindToggle() {
+    if (this._remindBusy) return
+
+    if (this.data.remindOn) {
+      this.disableReminder()
+      return
+    }
+
+    if (!reminder.supported()) {
+      this.showRemindSetup()
+      return
+    }
+
+    const profile = store.getProfile()
+    if (!profile || !profile.studentId) {
+      wx.showToast({ title: '先导入课表', icon: 'none' })
+      return
+    }
+
+    this._remindBusy = true
+    // 同步发起订阅，别在这一行之前加 await
+    reminder.enable(profile.studentId, this.data.remindLead).then(res => {
+      this._remindBusy = false
+      if (res.ok) {
+        this.applyReminder(res)
+        wx.showToast({ title: '已开启提醒', icon: 'none' })
+        return
+      }
+      this.handleRemindError(res)
+    })
+  },
+
+  /** 获取提醒次数：点一次获取 1 条（一次订阅授权只能换一条） */
+  onGetQuota() {
+    if (this._remindBusy) return
+
+    if (!this.data.remindOn) {
+      wx.showToast({ title: '先开启提醒', icon: 'none' })
+      return
+    }
+
+    if (!reminder.supported()) {
+      this.showRemindSetup()
+      return
+    }
+
+    this._remindBusy = true
+    reminder.renew().then(res => {
+      this._remindBusy = false
+      if (res.ok) {
+        this.applyReminder(res)
+        wx.showToast({ title: '已获取 ' + res.accepted + ' 次', icon: 'none' })
+        return
+      }
+      this.handleRemindError(res)
+    })
+  },
+
+  /** 切换课前几分钟提醒：先更新界面，再落库 */
+  onLeadChange(e) {
+    const index = Number(e.detail.value)
+    const minutes = LEAD_OPTIONS[index]
+    if (!minutes) return
+
+    this.setData({ remindLead: minutes, leadIndex: index })
+
+    reminder.setLead(minutes).then(res => {
+      if (res.ok) {
+        this.applyReminder(res)
+        return
+      }
+      if (res.reason === 'network') {
+        wx.showToast({ title: '设置未同步，稍后重试', icon: 'none' })
+      }
+    })
+  },
+
+  /** 关闭提醒：直接生效，只留一条轻提示 */
+  disableReminder() {
+    this._remindBusy = true
+    reminder.disable().then(state => {
+      this._remindBusy = false
+      if (state && state.ok) {
+        this.applyReminder(state)
+        wx.showToast({ title: '已关闭', icon: 'none' })
+        return
+      }
+      wx.showToast({ title: '操作失败，稍后再试', icon: 'none' })
+    })
+  },
+
   onImport() {
     wx.navigateTo({ url: '../login/login' })
   },
@@ -61,12 +250,20 @@ Page({
     const self = this
     wx.showModal({
       title: '清除课表数据',
-      content: '会删除本机已导入的课表，不影响学校教务系统的数据。',
+      // 提醒读的是云端那份课表，本地清空后云端还在，
+      // 不关掉的话每天还会继续收到提醒
+      content: '会删除本机已导入的课表，不影响学校教务系统的数据。' +
+        (this.data.remindOn ? '上课提醒也会一并关闭。' : ''),
       confirmText: '清除',
       confirmColor: '#B3402F',
       success(res) {
         if (!res.confirm) return
         store.clearCourses()
+        if (self.data.remindOn) {
+          reminder.disable().then(state => {
+            if (state && state.ok) self.applyReminder(state)
+          })
+        }
         self.refresh()
         wx.showToast({ title: '已清除', icon: 'none' })
       }
@@ -137,10 +334,79 @@ Page({
     })
   },
 
+  /**
+   * 打开公众号主页（wx.openOfficialAccountProfile，基础库 3.7.10+）。
+   * 这个接口只允许在点击行为里调用，所以不能先 await 别的再跳。
+   */
+  onOpenOfficialAccount() {
+    const account = config.OFFICIAL_ACCOUNT || {}
+    if (!account.username) return
+
+    if (typeof wx.openOfficialAccountProfile !== 'function') {
+      wx.showModal({
+        title: '微信版本过低',
+        content: '当前微信版本不支持直接打开公众号主页，请升级微信后再试。',
+        showCancel: false,
+        confirmText: '知道了',
+        confirmColor: '#2F4A8A'
+      })
+      return
+    }
+
+    wx.openOfficialAccountProfile({
+      username: account.username,
+      fail: () => this.showOfficialFallback()
+    })
+  },
+
+  /** 跳不过去时的兜底：配了名称就提示搜索，并支持一键复制 */
+  showOfficialFallback() {
+    const account = config.OFFICIAL_ACCOUNT || {}
+    const name = String(account.name || '').trim()
+
+    if (!name) {
+      wx.showModal({
+        title: '暂时打不开',
+        content: '请在微信里搜索公众号名称关注。',
+        showCancel: false,
+        confirmText: '知道了',
+        confirmColor: '#2F4A8A'
+      })
+      return
+    }
+
+    wx.showModal({
+      title: '关注公众号',
+      content: '请在微信里搜索「' + name + '」并关注。',
+      confirmText: '复制名称',
+      cancelText: '知道了',
+      confirmColor: '#2F4A8A',
+      success: res => {
+        if (!res.confirm) return
+        wx.setClipboardData({
+          data: name,
+          success: () => wx.showToast({ title: '名称已复制', icon: 'none' })
+        })
+      }
+    })
+  },
+
+  /** 关于：正常介绍，不再夹带作者吐槽 */
   onAbout() {
     wx.showModal({
-      title: '关于 ilove财大',
-      content: '版本 ' + VERSION + '\n一个校园课表小程序\n\n登录后账号密码仅用于向学校教务系统发起查询，密码不会保存在本机。',
+      title: '关于 星瞢课表',
+      content: '版本 ' + VERSION + '\n一款由校友制作的校园课表小程序\n\n支持从教务系统导入课表、上课前提醒、实时标注正在上的课，以及决策转盘等小工具。',
+      showCancel: false,
+      confirmText: '知道了',
+      confirmColor: '#2F4A8A'
+    })
+  },
+
+  /** 作者的话：把「为什么没有广告」单独说清楚 */
+  onAuthorNote() {
+    wx.showModal({
+      title: '作者的话',
+      content: '鉴于本人实在受不了市面上课表软件（某wake）各种又臭又长的广告和会员弹窗。所以干脆就自己作了一款课表小程序。顺带分享了出来\n所以它永久免费且无广。\n只是供自己使用，不会做大。',
       showCancel: false,
       confirmText: '知道了',
       confirmColor: '#2F4A8A'

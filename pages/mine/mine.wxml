@@ -37,20 +37,74 @@
 
         <view class="divide"></view>
 
-        <view class="row" bindtap="onRestoreFromCloud" hover-class="row--hover" hover-stay-time="60" aria-role="button">
-          <image class="row-icon" src="/assets/icons/cloud.svg" mode="aspectFit" />
-          <text class="row-label">从云端恢复课表</text>
-          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
-        </view>
-
-        <view class="divide"></view>
-
+        
         <view class="row" bindtap="onClearSchedule" hover-class="row--hover" hover-stay-time="60" aria-role="button">
           <image class="row-icon" src="/assets/icons/trash.svg" mode="aspectFit" />
           <text class="row-label row-label--danger">清除课表数据</text>
           <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
         </view>
       </view>
+    </view>
+
+    <!-- 提醒 -->
+    <view class="section">
+      <view class="section-head">
+        <text class="section-title">提醒</text>
+      </view>
+
+      <view class="card">
+        <!-- 开关 -->
+        <view class="row">
+          <image class="row-icon" src="/assets/icons/bell.svg" mode="aspectFit" />
+          <view class="remind-body">
+            <text class="row-label">上课提醒</text>
+          </view>
+          <view
+            class="remind-switch-hit"
+            bindtap="onRemindToggle"
+            hover-class="remind-switch-hit--hover"
+            hover-stay-time="60"
+            aria-role="switch"
+            aria-checked="{{remindOn}}"
+            aria-label="上课提醒"
+          >
+            <view class="remind-switch {{remindOn ? 'remind-switch--on' : ''}}">
+              <view class="remind-switch-knob"></view>
+            </view>
+          </view>
+        </view>
+
+        <view class="divide"></view>
+
+        <!-- 课前提醒时间：点整行打开选择器 -->
+        <picker mode="selector" range="{{leadLabels}}" value="{{leadIndex}}" bindchange="onLeadChange">
+          <view class="row" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+            <image class="row-icon" src="/assets/icons/clock.svg" mode="aspectFit" />
+            <text class="row-label">课前提醒</text>
+            <text class="row-value num">{{remindLead}} 分钟前</text>
+            <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+          </view>
+        </picker>
+
+        <view class="divide"></view>
+
+        <!-- 提醒次数：剩余条数 + 获取按钮 -->
+        <view class="row">
+          <image class="row-icon" src="/assets/icons/ticket.svg" mode="aspectFit" />
+          <text class="row-label">剩余提醒次数</text>
+          <text class="row-value {{remindOn && remindQuota <= 2 ? 'row-value--accent' : ''}}">{{remindQuotaText}}</text>
+          <view
+            class="remind-mini {{remindOn ? '' : 'remind-mini--off'}}"
+            bindtap="onGetQuota"
+            hover-class="remind-mini--hover"
+            hover-stay-time="60"
+            aria-role="button"
+          >获取次数</view>
+        </view>
+      </view>
+      <text class="remind-hint">开启后将通过微信服务通知提醒上课</text>
+      <text class="remind-hint">点击获取次数可获取一次提醒次数,次数耗尽后将自动关闭上课提醒功能</text>
+      
     </view>
 
     <!-- 其他 -->
@@ -60,9 +114,34 @@
       </view>
 
       <view class="card">
+        <!-- 公众号入口：没配原始 ID 时整行不出现 -->
+        <block wx:if="{{officialAccount.username}}">
+          <view
+            class="row"
+            bindtap="onOpenOfficialAccount"
+            hover-class="row--hover"
+            hover-stay-time="60"
+            aria-role="button"
+          >
+            <image class="row-icon" src="/assets/icons/wechat.svg" mode="aspectFit" />
+            <text class="row-label">获取更新 关注官方公众号</text>
+            <text class="row-value" wx:if="{{officialAccount.name}}">{{officialAccount.name}}</text>
+            <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+          </view>
+          <view class="divide"></view>
+        </block>
+
+        <view class="row" bindtap="onAuthorNote" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+          <image class="row-icon" src="/assets/icons/book.svg" mode="aspectFit" />
+          <text class="row-label">作者的话</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+        </view>
+
+        <view class="divide"></view>
+
         <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60" aria-role="button">
           <image class="row-icon" src="/assets/icons/info.svg" mode="aspectFit" />
-          <text class="row-label">关于 ilove财大</text>
+          <text class="row-label">关于 星瞢课表</text>
           <text class="row-value num">v{{version}}</text>
           <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
         </view>
@@ -78,7 +157,7 @@
       <text class="privacy-item">· 导入时密码会经由中间层服务转发给学校教务系统</text>
     </view>
 
-    <view class="footer-tip">ilove财大</view>
+    <view class="footer-tip">星瞢课表</view>
   </view>
 
   <view class="tabbar-space"></view>

@@ -35,5 +35,6 @@
     "tabSize": 2
   },
   "appid": "wxce6f1ae59bd24476",
+  "cloudfunctionRoot": "cloudfunctions/",
   "simulatorPluginLibVersion": {}
 }

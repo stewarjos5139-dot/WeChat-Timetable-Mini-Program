@@ -43,6 +43,21 @@
     </view>
   </view>
 
+  <!-- ============ 上课提醒额度不足时 ============ -->
+  <view
+    class="remind-tip"
+    wx:if="{{remindTip}}"
+    bindtap="onRemindRenew"
+    hover-class="remind-tip--hover"
+    hover-stay-time="60"
+    aria-role="button"
+    aria-label="{{remindTip.text}}，点击续订"
+  >
+    <image class="remind-tip-icon" src="/assets/icons/bell.svg" mode="aspectFit" />
+    <text class="remind-tip-text">{{remindTip.text}}</text>
+    <text class="remind-tip-act">点一下续订</text>
+  </view>
+
   <!-- ============ 星期表头（吸顶） ============ -->
   <view class="head">
     <view class="head-gutter"></view>
@@ -110,7 +125,7 @@
 
             <!-- 课程块，绝对定位浮在格子上方 -->
             <view
-              class="block tone{{c.color}}"
+              class="block tone{{c.color}} {{c.live ? 'block--live' : ''}} {{c.liveTight ? 'block--live-tight' : ''}}"
               wx:for="{{col.courses}}"
               wx:for-item="c"
               wx:key="id"
@@ -120,10 +135,15 @@
               hover-class="block--hover"
               hover-stay-time="60"
               aria-role="button"
-              aria-label="{{c.name}} {{c.room}}"
+              aria-label="{{c.name}} {{c.room}}{{c.live ? ' 上课中' : ''}}"
             >
               <text class="block-name">{{c.name}}</text>
               <text class="block-room">{{c.room}}</text>
+              <!-- 正在上课：底部压一条状态条，和方块同色系，不额外引入颜色 -->
+              <view class="block-live" wx:if="{{c.live}}">
+                <view class="block-live-dot"></view>
+                <text class="block-live-text">上课中</text>
+              </view>
             </view>
           </view>
         </view>

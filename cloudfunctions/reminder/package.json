@@ -1,0 +1,10 @@
+{
+  "name": "reminder",
+  "version": "1.0.0",
+  "description": "上课前 20 分钟订阅消息提醒",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

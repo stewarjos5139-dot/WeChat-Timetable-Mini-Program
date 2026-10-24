@@ -23,5 +23,24 @@ module.exports = {
   SERVICE_NAME: 'xingmeng',
 
   // ── 路 B ──
-  BASE_URL: ''
+  BASE_URL: '',
+
+  /**
+   * 上课提醒的订阅消息模板 ID（「日程提醒」，模板编号 17406）。
+   * **必须与 cloudfunctions/reminder/config.js 的 TEMPLATE_ID 一致**。
+   * 留空时「我的 → 上课提醒」会提示尚未配置。
+   * 完整步骤见根目录《订阅消息提醒.md》。
+   */
+  SUBSCRIBE_TEMPLATE_ID: 'rjv74W5NzMSCLvxq-knJ9ww5FuEMf44xxf-0-wr-aUo',
+
+  /**
+   * 「我的 → 关注公众号」入口。
+   * username 是公众号原始 ID（gh_ 开头），必须与小程序同主体或已关联，
+   * 否则 wx.openOfficialAccountProfile 会失败（代码里有兜底提示）。
+   * name 可选：填了会在行尾显示，并在跳转失败时提示搜索、支持一键复制。
+   */
+  OFFICIAL_ACCOUNT: {
+    username: 'gh_b2a6bdfb2a5e',
+    name: ''
+  }
 }

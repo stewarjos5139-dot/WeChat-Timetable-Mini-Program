@@ -87,3 +87,93 @@
 .row-label--danger {
   color: var(--danger);
 }
+
+/* ============ 上课提醒 ============ */
+/* 额度快用完时用墨蓝提醒一下，和「今天」标记是同一个强调色 */
+.row-value--accent {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 标题区：和右侧开关垂直居中 */
+.remind-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 开关：小滑块。关是发丝线灰，开是墨蓝，和「今天」标记同一个强调色。
+ * 外层 hit 区用内边距 + 负外边距把可点范围撑到 84rpx 高，视觉上仍是细滑块 */
+.remind-switch-hit {
+  flex: none;
+  margin: -16rpx -8rpx -16rpx 8rpx;
+  padding: 16rpx 8rpx;
+  display: flex;
+  align-items: center;
+}
+
+.remind-switch-hit--hover {
+  opacity: 0.75;
+}
+
+.remind-switch {
+  position: relative;
+  width: 88rpx;
+  height: 52rpx;
+  border-radius: var(--r-full);
+  background: var(--line);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.remind-switch--on {
+  background: var(--accent);
+}
+
+.remind-switch-knob {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(28, 28, 30, 0.18);
+  transition: transform var(--dur) var(--ease);
+}
+
+.remind-switch--on .remind-switch-knob {
+  transform: translateX(36rpx);
+}
+
+/* 「获取次数」小按钮：描边胶囊，和开关按钮区分开，不抢主次 */
+.remind-mini {
+  flex: none;
+  margin-left: 16rpx;
+  height: 52rpx;
+  padding: 0 20rpx;
+  border-radius: var(--r-full);
+  border: 1rpx solid var(--accent);
+  color: var(--accent);
+  font-size: 23rpx;
+  font-weight: 600;
+  line-height: 50rpx;
+  transition: transform var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+.remind-mini--off {
+  border-color: var(--line);
+  color: var(--text-3);
+}
+
+.remind-mini--hover {
+  transform: scale(0.96);
+}
+
+.remind-hint {
+  margin-top: 16rpx;
+  padding: 0 8rpx;
+  font-size: 22rpx;
+  line-height: 1.65;
+  color: var(--text-3);
+}

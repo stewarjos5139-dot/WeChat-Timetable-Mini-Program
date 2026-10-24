@@ -1,6 +1,7 @@
 // pages/schedule/schedule.js
 const store = require('../../utils/store')
 const cloud = require('../../utils/cloud')
+const reminder = require('../../utils/reminder')
 
 /** 每节课的行高（rpx），与 wxss 里的 .slot 高度保持一致 */
 const ROW_H = 112
@@ -191,6 +192,49 @@ function timeTextOf(course) {
   return DAY_NAMES[course.day - 1] + ' ' + range
 }
 
+/** 'HH:MM' → 当天第几分钟，格式不对时返回 NaN */
+function toMinutes(hhmm) {
+  const parts = String(hhmm || '').split(':')
+  const h = parseInt(parts[0], 10)
+  const m = parseInt(parts[1], 10)
+  if (isNaN(h) || isNaN(m)) return NaN
+  return h * 60 + m
+}
+
+/**
+ * 此刻正在上的课：要同时满足「看的是本周」「今天是这门课的星期」
+ * 「当前时间落在起始节的上课时间和结束节的下课时间之间」。
+ * 节与节之间那几分钟的课间也算在上课里，和大家的直觉一致。
+ *
+ * 开学前 / 放假后「本周」会被夹到第 1 周或最后一周，那种日子其实不上课，
+ * 所以还要用真实日期核对一遍：今天必须真的在这一周里。
+ *
+ * 真有时间冲突的课重叠时，取节次靠前的那门 —— 一格只标一个「上课中」。
+ * 返回课程 id，没有正在上的课返回 ''。
+ */
+function liveCourseId(courses, week, thisWeek, term) {
+  if (!term || week !== thisWeek) return ''
+
+  const now = new Date()
+  if (dateKey(mondayOfWeek(term, week)) !== dateKey(mondayOf(now))) return ''
+
+  const day = now.getDay() === 0 ? 7 : now.getDay() // 周日算作 7
+  const minutes = now.getHours() * 60 + now.getMinutes()
+
+  for (let i = 0; i < courses.length; i++) {
+    const course = courses[i]
+    if (course.day !== day || !isActiveInWeek(course, week)) continue
+    const first = SECTIONS[course.start - 1]
+    const last = SECTIONS[course.start + course.span - 2]
+    if (!first || !last) continue
+    const from = toMinutes(first.from)
+    const to = toMinutes(last.to)
+    if (isNaN(from) || isNaN(to)) continue
+    if (minutes >= from && minutes < to) return course.id
+  }
+  return ''
+}
+
 /** 「2026-2027 学年 · 第一学期」 */
 function termLabel(term) {
   const startYear = parseInt(term.xnm, 10)
@@ -214,7 +258,7 @@ function isConflict(a, b, totalWeeks) {
 }
 
 /** 存储里的课程 → 课表方块 / 详情弹层用的展示数据 */
-function toView(course) {
+function toView(course, live) {
   return {
     id: course.id,
     name: course.name,
@@ -224,6 +268,10 @@ function toView(course) {
     color: (course.color || 0) % COLOR_COUNT,
     timeText: timeTextOf(course),
     weekText: weekTextOf(course),
+    // 正在上课：方块底部压一条「上课中」。
+    // 单节课的方块只有一行高，状态条会吃掉下半截，UI 上要跟着收紧（见 wxss）
+    live: !!live,
+    liveTight: !!live && course.span === 1,
     // 绝对定位：起始节次决定 top，节数决定 height
     style: 'top:' + ((course.start - 1) * ROW_H) + 'rpx;height:' + (course.span * ROW_H - 10) + 'rpx'
   }
@@ -262,8 +310,11 @@ function rangeTextOf(week, term) {
       (sunday.getMonth() + 1) + ' 月 ' + sunday.getDate() + ' 日'
 }
 
-/** 构建某一周 7 列的课程方块 */
-function buildCols(week, courses, head) {
+/**
+ * 构建某一周 7 列的课程方块。
+ * liveId 是「此刻正在上的课」，只有当前周会传进来，其余周一律不标。
+ */
+function buildCols(week, courses, head, liveId) {
   const cols = head.map(function (h) {
     return { day: h.day, isToday: h.isToday, courses: [] }
   })
@@ -273,7 +324,7 @@ function buildCols(week, courses, head) {
     if (!col) return
     // 节次超出时间表范围，跳过而不是崩掉
     if (course.start < 1 || course.start + course.span - 1 > SECTION_COUNT) return
-    col.courses.push(toView(course))
+    col.courses.push(toView(course, !!liveId && course.id === liveId))
   })
   return cols
 }
@@ -305,6 +356,9 @@ Page({
     weekCourseCount: 0,
     isEmpty: false,
     termText: '',
+
+    // 上课提醒额度不足时的顶部提示，null 表示不显示
+    remindTip: null,
 
     // 空课表引导弹窗：showGuide 时课表模糊并锁住；guideLeaving 是关闭动画中
     showGuide: false,
@@ -345,6 +399,23 @@ Page({
       this._stamp = stamp
       this.loadData()
     }
+
+    // 在后台待过再回来：可能已经上课 / 下课了，先立刻对一次，再挂着定时器
+    this.syncLive()
+    this.startLiveTimer()
+
+    // 上课提醒额度快用完时，在顶部出一条续订提示。
+    // 先拿本地缓存渲染，status 内部 5 分钟才向云端确认一次
+    this.applyRemindTip(reminder.readCache())
+    reminder.status().then(state => this.applyRemindTip(state))
+  },
+
+  onHide() {
+    this.stopLiveTimer()
+  },
+
+  onUnload() {
+    this.stopLiveTimer()
   },
 
   /** 滚动时收起「＋」，避免它和手指错位 */
@@ -388,6 +459,8 @@ Page({
    */
   goWeek(week) {
     const head = buildHead(week, this._term)
+    // 每次重建都重新对一次表：翻到本周时才可能有「上课中」
+    this._liveId = liveCourseId(this._courses, week, this._thisWeek, this._term)
     const patch = {
       week: week,
       current: week - 1,
@@ -401,7 +474,7 @@ Page({
       const n = i + 1
       const near = Math.abs(n - week) <= 1
       if (near) {
-        const cols = buildCols(n, this._courses, n === week ? head : buildHead(n, this._term))
+        const cols = buildCols(n, this._courses, n === week ? head : buildHead(n, this._term), n === week ? this._liveId : '')
         if (n === week) count = cols.reduce((sum, c) => sum + c.courses.length, 0)
         patch['weeks[' + i + ']'] = { week: n, loaded: true, cols: cols }
       } else if (w.loaded) {
@@ -411,6 +484,81 @@ Page({
     patch.weekCourseCount = count
 
     this.setData(patch)
+  },
+
+  /**
+   * 页面停在这一页时，时间照样在走。每半分钟对一次「上课中」，
+   * 状态没变就什么都不做，变了才 setData（只改那一个方块，不动整张表）。
+   */
+  syncLive() {
+    if (!this._courses) return
+    const next = liveCourseId(this._courses, this.data.week, this._thisWeek, this._term)
+    if (next === this._liveId) return
+    this._liveId = next
+
+    const patch = {}
+    this.data.weeks.forEach((w, i) => {
+      if (!w.loaded) return
+      w.cols.forEach((col, j) => {
+        col.courses.forEach((c, k) => {
+          const live = !!next && c.id === next
+          if (c.live !== live) {
+            patch['weeks[' + i + '].cols[' + j + '].courses[' + k + '].live'] = live
+          }
+        })
+      })
+    })
+    if (Object.keys(patch).length) this.setData(patch)
+  },
+
+  startLiveTimer() {
+    this.stopLiveTimer()
+    this._liveTimer = setInterval(() => this.syncLive(), 30000)
+  },
+
+  stopLiveTimer() {
+    if (this._liveTimer) {
+      clearInterval(this._liveTimer)
+      this._liveTimer = null
+    }
+  },
+
+  /* ─────────────── 上课提醒的续订提示 ─────────────── */
+
+  /** 把剩余额度翻译成顶部提示条；不需要提示时收起 */
+  applyRemindTip(state) {
+    const tip = reminder.tipOf(state)
+    const now = this.data.remindTip
+    if (!tip && !now) return
+    if (tip && now && tip.quota === now.quota && tip.text === now.text) return
+    this.setData({ remindTip: tip })
+  },
+
+  /**
+   * 点提示条续订。requestSubscribeMessage 必须在点击回调里同步调用，
+   * 所以 reminder.renew() 要直接放在这里，前面不能有 await。
+   */
+  onRemindRenew() {
+    if (this._remindBusy) return
+    this._remindBusy = true
+
+    reminder.renew().then(res => {
+      this._remindBusy = false
+
+      if (res.ok) {
+        this.applyRemindTip(res)
+        wx.showToast({ title: '已续订 ' + res.accepted + ' 次', icon: 'none' })
+        return
+      }
+
+      const tips = {
+        'no-accept': '需要授权才能提醒',
+        'not-enabled': '先到「我的」开启提醒',
+        'network': '网络异常，稍后再试',
+        'unsupported': '提醒功能未配置'
+      }
+      wx.showToast({ title: tips[res.reason] || '操作失败，稍后再试', icon: 'none' })
+    })
   },
 
   /** 课程数据变了（增删改），保持当前周重新装配 */

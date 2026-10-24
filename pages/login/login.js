@@ -132,7 +132,7 @@ Page({
 
     api.fetchSchedule(params, function (attempt) {
       // 一旦开始重试就把文案换掉 —— 否则用户看到的就是「卡住了」
-      if (attempt === 1) self.setData({ loadingText: '正在唤醒服务…' })
+      if (attempt === 1) self.setData({ loadingText: '正在解析课表…' })
     })
       .then(function (res) {
         const term = store.getTerm()
@@ -205,7 +205,7 @@ Page({
         lines: [
           { text: '云端服务可能正在启动', strong: true },
           { text: '稍等十几秒再点一次重试就好' },
-          { text: '如果一直这样，检查云托管里的服务是否正常运行' }
+          { text: '如果一直这样，请过10分钟后再试' }
         ],
         actions: [
           { key: 'retry', label: '重试' },
@@ -266,7 +266,7 @@ Page({
   },
 
   /** 结果卡片出现时挡住页面滚动和点击穿透，和课表页的引导弹窗一个套路 */
-  noop() {},
+  noop() { },
 
   showBackendTip() {
     wx.showModal({

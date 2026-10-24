@@ -97,6 +97,51 @@
   transform: rotate(180deg);
 }
 
+/* ============ 上课提醒的续订提示 ============
+ * 只在额度 ≤3 时出现，窄窄一条，不挤压课表。
+ * 配色沿用「今天」标记的墨蓝浅底，不引入新颜色。 */
+.remind-tip {
+  margin: 0 28rpx 16rpx 36rpx;
+  height: 64rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  animation: remind-tip-in 0.2s var(--ease);
+}
+
+.remind-tip--hover {
+  background: #dde3ef;
+}
+
+.remind-tip-icon {
+  flex: none;
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 10rpx;
+}
+
+.remind-tip-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: var(--accent);
+}
+
+.remind-tip-act {
+  flex: none;
+  margin-left: 12rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+@keyframes remind-tip-in {
+  from { opacity: 0; transform: translateY(-6rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ============ 空课表引导：毛玻璃 + 小卡片 ============
  *
  * 只虚化网格（.grid--blur），周次栏和星期表头保持清晰：
@@ -426,6 +471,63 @@
   line-height: 1.25;
   opacity: 0.8;
   word-break: break-all;
+}
+
+/* ---- 正在上课：底部压一条状态条 ----
+ * 只用方块自己的深色（--tone-fg）做底、白字，不引入新颜色，
+ * 也好让「上课中」在 7 种配色上对比度都够（均 ≥ 7:1）。
+ * 状态条绝对定位贴住方块底部，不改变方块本身的排版，
+ * 因此方块再矮也不会把这三个字挤没。 */
+.block--live {
+  box-shadow: 0 0 0 2rpx var(--tone-bar);
+}
+
+.block-live {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 28rpx;
+  background: var(--tone-fg);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 呼吸灯：一眼看出是「正在」，又不至于在满屏方块里抢注意力 */
+.block-live-dot {
+  width: 7rpx;
+  height: 7rpx;
+  margin-right: 5rpx;
+  border-radius: 50%;
+  background: currentColor;
+  animation: block-live-pulse 1.6s ease-in-out infinite;
+}
+
+/* 一格只有 68rpx 的内宽：17rpx 的三个字 + 圆点刚好放得下（63rpx） */
+.block-live-text {
+  font-size: 17rpx;
+  line-height: 1;
+}
+
+/* 单节课的方块只有 102rpx 高，状态条占掉底部 28rpx。
+ * 两行课名（约 55rpx）正好落在状态条上方，地点行则会被压住，
+ * 所以单节时课名收到两行、地点先让位 —— 不然会露出半行被切碎的字 */
+.block--live-tight .block-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.block--live-tight .block-room {
+  display: none;
+}
+
+@keyframes block-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.72); }
 }
 
 /* ============ 课程详情弹层 ============ */
