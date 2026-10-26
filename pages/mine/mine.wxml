@@ -37,7 +37,49 @@
 
         <view class="divide"></view>
 
-        
+        <!-- 课表字体大小：一条刻度线 + 可拖动的圆点，松手吸附到最近一档 -->
+        <view class="fontrow">
+          <view class="fontrow-head">
+            <text class="fontrow-label">课表区域字体大小</text>
+            <text class="fontrow-value">{{fontLabels[fontIndex]}}</text>
+          </view>
+
+          <view
+            class="fs-area"
+            bindtouchstart="onFontTouchStart"
+            catchtouchmove="onFontTouchMove"
+            bindtouchend="onFontTouchEnd"
+            bindtouchcancel="onFontTouchEnd"
+            aria-role="slider"
+            aria-label="课表区域字体大小"
+          >
+            <view class="fs-track">
+              <view class="fs-fill" style="width: {{fontFillWidth}}px;"></view>
+              <view
+                wx:for="{{fontLabels}}"
+                wx:key="*this"
+                class="fs-tick {{index <= fontIndex ? 'fs-tick--on' : ''}}"
+                style="left: {{index * 25}}%;"
+              ></view>
+            </view>
+            <view
+              class="fs-knob {{fontDragging ? 'fs-knob--dragging' : ''}}"
+              style="left: {{fontKnobX}}px;"
+            ></view>
+          </view>
+
+          <view class="fs-labels">
+            <text
+              wx:for="{{fontLabels}}"
+              wx:key="*this"
+              class="fs-label {{index === fontIndex ? 'fs-label--on' : ''}}"
+              style="left: {{index * 25}}%;"
+            >{{item}}</text>
+          </view>
+        </view>
+
+        <view class="divide"></view>
+
         <view class="row" bindtap="onClearSchedule" hover-class="row--hover" hover-stay-time="60" aria-role="button">
           <image class="row-icon" src="/assets/icons/trash.svg" mode="aspectFit" />
           <text class="row-label row-label--danger">清除课表数据</text>

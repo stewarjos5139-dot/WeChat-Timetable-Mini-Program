@@ -5,6 +5,13 @@ const reminder = require('../../utils/reminder')
 
 /** 每节课的行高（rpx），与 wxss 里的 .slot 高度保持一致 */
 const ROW_H = 112
+
+/**
+ * 课表方块的字号档位（只影响块内文字）。模块加载时读一次放进初始 data，
+ * 首次渲染就是用户选的字号，不会先按标准档闪一下再跳。
+ */
+const INITIAL_FONT_INDEX = store.getFontIndex()
+const INITIAL_FONT_SCALE = store.FONT_LEVELS[INITIAL_FONT_INDEX].scale
 /** 星期表头，index 0 = 周一 */
 const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 const DAY_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -272,6 +279,8 @@ function toView(course, live) {
     // 单节课的方块只有一行高，状态条会吃掉下半截，UI 上要跟着收紧（见 wxss）
     live: !!live,
     liveTight: !!live && course.span === 1,
+    // 单节课的方块最矮，字号放大时要单独收一下内容（见 wxss 的 .block--single）
+    single: course.span === 1,
     // 绝对定位：起始节次决定 top，节数决定 height
     style: 'top:' + ((course.start - 1) * ROW_H) + 'rpx;height:' + (course.span * ROW_H - 10) + 'rpx'
   }
@@ -345,6 +354,8 @@ Page({
   data: {
     rowH: ROW_H,
     gridH: ROW_H * SECTION_COUNT,
+    fontIndex: INITIAL_FONT_INDEX,
+    blockScale: INITIAL_FONT_SCALE,
     sections: SECTIONS,
     weeks: [],      // swiper 每一页，只有当前周 ±1 是 loaded 的
     current: 0,     // swiper 当前页下标 = 周次 - 1
@@ -400,6 +411,9 @@ Page({
       this.loadData()
     }
 
+    // 字号在「我的」页改的，切回来才生效。只改块内文字，不用重建课表
+    this.syncFontLevel()
+
     // 在后台待过再回来：可能已经上课 / 下课了，先立刻对一次，再挂着定时器
     this.syncLive()
     this.startLiveTimer()
@@ -411,6 +425,14 @@ Page({
 
     // 云端那份也是提醒的数据源：回到课表页顺手补传一次，失败静默
     cloud.ensureBackup()
+  },
+
+  /** 把「我的」页选的字号同步过来；档位没变就不 setData，避免多余重绘 */
+  syncFontLevel() {
+    const index = store.getFontIndex()
+    const scale = store.FONT_LEVELS[index].scale
+    if (index === this.data.fontIndex && scale === this.data.blockScale) return
+    this.setData({ fontIndex: index, blockScale: scale })
   },
 
   onHide() {

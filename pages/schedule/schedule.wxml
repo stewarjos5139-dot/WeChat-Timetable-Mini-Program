@@ -1,5 +1,5 @@
 <!--pages/schedule/schedule.wxml-->
-<view class="page">
+<view class="page page--fs{{fontIndex}}" style="--bs: {{blockScale}};">
 
   <!-- ============ 周次切换 ============ -->
   <view class="weekbar">
@@ -125,7 +125,7 @@
 
             <!-- 课程块，绝对定位浮在格子上方 -->
             <view
-              class="block tone{{c.color}} {{c.live ? 'block--live' : ''}} {{c.liveTight ? 'block--live-tight' : ''}}"
+              class="block tone{{c.color}} {{c.live ? 'block--live' : ''}} {{c.liveTight ? 'block--live-tight' : ''}} {{c.single ? 'block--single' : ''}}"
               wx:for="{{col.courses}}"
               wx:for-item="c"
               wx:key="id"

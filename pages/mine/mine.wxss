@@ -204,3 +204,112 @@
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* ---------- 课表区域字体大小：刻度滑杆 ----------
+ * 一条浅灰轨道 + 五个挡位点 + 一个白色圆点。
+ * 圆点直径 40rpx，轨道左右各缩进半个圆点，圆点正好能走到两端。 */
+.fontrow {
+  padding: 26rpx 28rpx 20rpx;
+}
+
+.fontrow-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.fontrow-label {
+  font-size: 29rpx;
+  color: var(--text-1);
+}
+
+/* 右侧当前档位，跟着拖动实时变化 */
+.fontrow-value {
+  font-size: 25rpx;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.fs-area {
+  position: relative;
+  width: 100%;
+  height: 40rpx;
+  margin-top: 24rpx;
+}
+
+.fs-track {
+  position: absolute;
+  left: 20rpx;
+  right: 20rpx;
+  top: 50%;
+  height: 6rpx;
+  margin-top: -3rpx;
+  border-radius: 3rpx;
+  background: var(--fill);
+}
+
+/* 已选部分的墨蓝实线，宽度由 JS 按圆点位置算 */
+.fs-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 3rpx;
+  background: var(--accent);
+}
+
+/* 五个挡位点：没走到的压在浅灰轨道上是深一点的灰，走过的变成白点嵌在墨蓝线上 */
+.fs-tick {
+  position: absolute;
+  top: 50%;
+  width: 12rpx;
+  height: 12rpx;
+  margin: -6rpx 0 0 -6rpx;
+  border-radius: 50%;
+  background: rgba(28, 28, 30, 0.14);
+}
+
+.fs-tick--on {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.fs-knob {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 40rpx;
+  height: 40rpx;
+  margin-top: -20rpx;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 2rpx 10rpx rgba(28, 28, 30, 0.16), 0 0 0 2rpx var(--accent);
+  /* 松手后圆点滑到最近的挡位；拖动中关掉过渡，跟手 */
+  transition: left 160ms var(--ease);
+}
+
+.fs-knob--dragging {
+  transition: none;
+}
+
+/* 刻度文字：和线一样左右各缩 20rpx，按百分比定位，正好对齐挡位点 */
+.fs-labels {
+  position: relative;
+  height: 30rpx;
+  margin: 10rpx 20rpx 0;
+}
+
+.fs-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 22rpx;
+  line-height: 30rpx;
+  white-space: nowrap;
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease);
+}
+
+.fs-label--on {
+  font-weight: 600;
+  color: var(--accent);
+}

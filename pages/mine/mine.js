@@ -10,11 +10,30 @@ const VERSION = '0.2.0'
 const LEAD_OPTIONS = reminder.LEAD_OPTIONS
 const LEAD_LABELS = LEAD_OPTIONS.map(function (m) { return m + ' 分钟' })
 
+/** 课表字号档位，来自 utils/store.js */
+const FONT_LABELS = store.FONT_LEVELS.map(function (level) { return level.label })
+const FONT_LAST = store.FONT_LEVELS.length - 1
+/** 滑杆圆点直径（rpx），与 mine.wxss 的 .fs-knob 保持一致 */
+const FONT_KNOB_RPX = 40
+
+/** rpx → px。movable-view 的 x 只认 px，所以量出来的宽度要换算 */
+function rpx2px(rpx) {
+  const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+  return (rpx * (info.windowWidth || 375)) / 750
+}
+
 Page({
   data: {
     version: VERSION,
     hasSchedule: false,
     termText: '',
+
+    // 课表方块字号。fontKnobX / fontFillWidth 是滑杆的 px 位置，量出轨道宽度后才有值
+    fontLabels: FONT_LABELS,
+    fontIndex: store.getFontIndex(),
+    fontKnobX: 0,
+    fontFillWidth: 0,
+    fontDragging: false,
 
     // 公众号入口。没配原始 ID 时整行不渲染
     officialAccount: config.OFFICIAL_ACCOUNT,
@@ -54,12 +73,21 @@ Page({
     clearTimeout(this._tipTimer)
   },
 
+  onReady() {
+    this.measureFontBar()
+  },
+
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 })
     }
     this.refresh()
     this.refreshReminder()
+
+    const fontIndex = store.getFontIndex()
+    if (fontIndex !== this.data.fontIndex) this.setData({ fontIndex: fontIndex })
+    // 圆点位置按档位重算；首次进页面时轨道还没渲染，这里再量一次
+    this.measureFontBar()
   },
 
   refresh() {
@@ -252,6 +280,70 @@ Page({
         this.tip('设置未同步，稍后重试')
       }
     })
+  },
+
+  /**
+   * 量出滑杆宽度，把「档位 → 圆点位置」换算成 px。
+   * 圆的 left 用的是 px，而轨道两端各缩进半个圆点，
+   * 所以圆点的行程 = 区域宽度 − 圆点宽度，正好等于轨道长度。
+   */
+  measureFontBar() {
+    this.createSelectorQuery()
+      .select('.fs-area')
+      .boundingClientRect(rect => {
+        if (!rect || !rect.width) return
+        this._fontMaxX = Math.max(1, rect.width - rpx2px(FONT_KNOB_RPX))
+        const x = Math.round((this._fontMaxX * this.data.fontIndex) / FONT_LAST)
+        this.setData({ fontKnobX: x, fontFillWidth: x })
+      })
+      .exec()
+  },
+
+  /** 按住圆点开始拖动 */
+  onFontTouchStart(e) {
+    const touch = e.touches && e.touches[0]
+    if (!touch || !this._fontMaxX) return
+
+    this._fontDragFrom = this.data.fontKnobX
+    this._fontDragX = touch.clientX
+    this._fontStartIndex = this.data.fontIndex
+    if (!this.data.fontDragging) this.setData({ fontDragging: true })
+  },
+
+  /**
+   * 拖动中：按手指的位移量移动圆点。
+   * 用位移而不是手指的绝对位置，就不用关心页面滚到哪儿了。
+   */
+  onFontTouchMove(e) {
+    const touch = e.touches && e.touches[0]
+    const maxX = this._fontMaxX
+    if (!touch || !maxX || this._fontDragX === undefined) return
+
+    const raw = this._fontDragFrom + (touch.clientX - this._fontDragX)
+    const x = Math.round(Math.min(maxX, Math.max(0, raw)))
+    const index = Math.min(FONT_LAST, Math.max(0, Math.round((x / maxX) * FONT_LAST)))
+
+    const patch = { fontKnobX: x, fontFillWidth: x }
+    if (index !== this.data.fontIndex) patch.fontIndex = index
+    this.setData(patch)
+  },
+
+  /** 松手：吸附到最近一档并落库 */
+  onFontTouchEnd() {
+    this._fontDragX = undefined
+    this.setData({ fontDragging: false })
+
+    const maxX = this._fontMaxX
+    if (!maxX) return
+
+    const saved = store.setFontIndex(this.data.fontIndex)
+    const x = Math.round((maxX * saved) / FONT_LAST)
+    this.setData({ fontIndex: saved, fontKnobX: x, fontFillWidth: x })
+
+    // 只是点了一下、档位没变就不弹提示
+    if (saved !== this._fontStartIndex) {
+      this.tip('课表字号：' + store.FONT_LEVELS[saved].label)
+    }
   },
 
   /** 关闭提醒：直接生效，只留一条轻提示 */

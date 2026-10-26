@@ -28,7 +28,12 @@
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('cloudfunctions/reminder/config.json','utf8'\\)\\);console.log\\('config.json OK'\\)\")",
       "Bash(node --check index.js)",
       "Bash(node --check config.js)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Read(//c/Program Files \\\\\\(x86\\\\\\)/Tencent/微信web开发者工具/**)",
+      "Read(//c/Program Files/Tencent/微信web开发者工具/**)",
+      "Bash(awk -F'\\(' '{print $1}')",
+      "mcp__claude-vscode__getDiagnostics"
     ]
   }
 }

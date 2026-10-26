@@ -59,7 +59,70 @@ async function onCall(openid, data) {
   if (action === 'disable') return disable(openid)
   if (action === 'sendTest') return sendTest(openid, data)
   if (action === 'testReminder') return testReminder(openid, data)
+  if (action === 'quotaTrail') return quotaTrail(openid)
   return { ok: false, reason: 'bad-action' }
+}
+
+/**
+ * 额度流水：现在的 quota 是怎么累加出来的。只读，不改数据、不发消息。
+ * 代码里只有 enable（首次开启）和 addQuota（获取次数）会加额度，
+ * 所以每条 action 日志的 count 加起来就是 quota 的来源。
+ */
+async function quotaTrail(openid) {
+  const doc = await getReminder(openid)
+  const studentId = String((doc && doc.studentId) || '').trim()
+
+  let logs = []
+  try {
+    // 不用 orderBy，免得要额外建索引；取回来在内存里排
+    const res = await db.collection(config.COLLECTIONS.logs)
+      .where({ studentId: studentId })
+      .limit(100)
+      .get()
+    logs = (res.data || [])
+      .filter(function (l) { return l.type !== 'scan' })
+      .sort(function (a, b) { return (Number(a.at) || 0) - (Number(b.at) || 0) })
+      .map(function (l) {
+        return {
+          time: formatAt(l.at),
+          action: l.action || '',
+          count: l.count,
+          quota: l.quota,
+          leadMinutes: l.leadMinutes
+        }
+      })
+  } catch (err) {
+    // 集合没建 / 没权限都当作没有流水
+    logs = []
+  }
+
+  let added = 0
+  logs.forEach(function (l) { added += Number(l.count) || 0 })
+
+  return {
+    ok: true,
+    // 部署上去的这份云函数用的常量。和本地 config.js 对不上就说明没重新上传
+    config: {
+      MAX_QUOTA: config.MAX_QUOTA,
+      MAX_QUOTA_PER_TAP: config.MAX_QUOTA_PER_TAP,
+      MODE: config.MODE,
+      LEAD_MINUTES: config.LEAD_MINUTES,
+      BLOCK_START_SECTIONS: config.BLOCK_START_SECTIONS
+    },
+    reminder: doc ? {
+      quota: Number(doc.quota) || 0,
+      enabled: !!doc.enabled,
+      studentId: doc.studentId || '',
+      name: doc.name || '',
+      leadMinutes: doc.leadMinutes,
+      createdAt: formatAt(doc.createdAt),
+      updatedAt: formatAt(doc.updatedAt),
+      lastSentDate: doc.lastSentDate || '',
+      sentToday: (doc.sentKeys || []).length
+    } : null,
+    added: added,
+    logs: logs
+  }
 }
 
 async function status(openid) {
@@ -986,6 +1049,15 @@ function clampInt(value, min, max) {
 
 function pad2(n) {
   return n < 10 ? '0' + n : String(n)
+}
+
+/** 时间戳 → 北京时间「MM-DD HH:MM」，只给诊断输出用 */
+function formatAt(ts) {
+  const n = Number(ts) || 0
+  if (!n) return ''
+  const p = tt.beijingParts(new Date(n))
+  return (p.month + 1) + '-' + pad2(p.day) + ' ' +
+    pad2(Math.floor(p.minutes / 60)) + ':' + pad2(p.minutes % 60)
 }
 
 function timeValue(startMinutes, t) {

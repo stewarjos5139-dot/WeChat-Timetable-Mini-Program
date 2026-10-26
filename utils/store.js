@@ -12,6 +12,8 @@ const KEY_STAMP = 'schedule_stamp'
 const KEY_PROFILE = 'user_profile'
 // 旧版只存学号的 key。现在只读不写，给装过旧版本的机器做回退（见 getAccount）
 const KEY_ACCOUNT = 'schedule_account'
+// 课表方块字号档位（0 ~ 4）
+const KEY_FONT = 'schedule_font_level'
 
 /** 学期设置默认值。xnm/xqm 是正方教务系统的学年/学期参数 */
 const DEFAULT_TERM = {
@@ -29,6 +31,22 @@ const TERM_OPTIONS = [
   { label: '第二学期', value: '12' },
   { label: '第三学期', value: '16' }
 ]
+
+/**
+ * 课表方块的字号档位。只缩放课程块里的文字（课程名、教室、上课中），
+ * 行列尺寸、表头、周次栏都不跟着变，所以放大不会把课表挤长。
+ * scale 是相对当前字号的倍数，标准档为 1。
+ */
+const FONT_LEVELS = [
+  { label: '小', scale: 0.9 },
+  { label: '偏小', scale: 0.95 },
+  { label: '标准', scale: 1 },
+  { label: '偏大', scale: 1.1 },
+  { label: '大', scale: 1.2 }
+]
+
+/** 没设置过时用「标准」 */
+const DEFAULT_FONT_INDEX = 2
 
 /** 生成最近几年的学年选项，最新的排最前 */
 function buildYearOptions() {
@@ -104,9 +122,36 @@ function getAccount() {
   return wx.getStorageSync(KEY_ACCOUNT) || ''
 }
 
+/* ─────────────── 课表字号 ─────────────── */
+
+/**
+ * 收敛到合法下标。注意空字符串不能直接 Number()：
+ * Number('') === 0，会把「从没设置过」误判成第 0 档「小」。
+ */
+function toFontIndex(value) {
+  if (value === '' || value === null || value === undefined) return DEFAULT_FONT_INDEX
+  const n = Math.floor(Number(value))
+  if (!isFinite(n) || n < 0 || n >= FONT_LEVELS.length) return DEFAULT_FONT_INDEX
+  return n
+}
+
+/** 当前档位下标；存的值非法就退回「标准」 */
+function getFontIndex() {
+  return toFontIndex(wx.getStorageSync(KEY_FONT))
+}
+
+/** 保存档位，非法值退回「标准」后写入，返回实际落库的下标 */
+function setFontIndex(index) {
+  const safe = toFontIndex(index)
+  wx.setStorageSync(KEY_FONT, safe)
+  return safe
+}
+
 module.exports = {
   DEFAULT_TERM,
   TERM_OPTIONS,
+  FONT_LEVELS,
+  DEFAULT_FONT_INDEX,
   buildYearOptions,
   getCourses,
   setCourses,
@@ -116,5 +161,7 @@ module.exports = {
   setTerm,
   getProfile,
   setProfile,
-  getAccount
+  getAccount,
+  getFontIndex,
+  setFontIndex
 }

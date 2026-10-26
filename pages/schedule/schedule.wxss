@@ -459,7 +459,8 @@
 }
 
 .block-name {
-  font-size: 21rpx;
+  /* 字号由「我的 → 课表字体大小」控制，只缩放块内文字，方块尺寸不变 */
+  font-size: calc(21rpx * var(--bs, 1));
   font-weight: 600;
   line-height: 1.3;
   word-break: break-all;
@@ -467,7 +468,7 @@
 
 .block-room {
   margin-top: 6rpx;
-  font-size: 18rpx;
+  font-size: calc(18rpx * var(--bs, 1));
   line-height: 1.25;
   opacity: 0.8;
   word-break: break-all;
@@ -507,8 +508,36 @@
 
 /* 一格只有 68rpx 的内宽：17rpx 的三个字 + 圆点刚好放得下（63rpx） */
 .block-live-text {
-  font-size: 17rpx;
+  font-size: calc(17rpx * var(--bs, 1));
   line-height: 1;
+}
+
+/* ---- 字号放大后的收口 ----
+ * 方块高度是固定的（单节 102rpx），字放大后如果不收紧内容，
+ * 会出现半行被切断的字。小 / 偏小 / 标准三档不加任何约束，和原来一致。 */
+.page--fs3 .block-name,
+.page--fs4 .block-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 单节块：两行课名之后塞不下教室，教室先让位（与「上课中」的处理一致） */
+.page--fs3 .block--single .block-room,
+.page--fs4 .block--single .block-room {
+  display: none;
+}
+
+/* 单节 + 上课中：状态条占掉底部 28rpx，课名只留一行 */
+.page--fs3 .block--live-tight .block-name,
+.page--fs4 .block--live-tight .block-name {
+  -webkit-line-clamp: 1;
+}
+
+/* 「上课中」三个字放大后加圆点会超过 68rpx 内宽，最大档去掉圆点 */
+.page--fs4 .block-live-dot {
+  display: none;
 }
 
 /* 单节课的方块只有 102rpx 高，状态条占掉底部 28rpx。
