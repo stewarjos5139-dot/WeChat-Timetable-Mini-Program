@@ -59,18 +59,22 @@ const server = http.createServer(async function (req, res) {
     return
   }
 
+  let params = {}
   try {
-    const params = JSON.parse((await readBody(req)) || '{}')
+    params = JSON.parse((await readBody(req)) || '{}')
+    console.log('[schedule] 请求 学号=' + (params.studentId || '-') + ' 姓名=-（登录前未知）')
+
     const data = await fetchSchedule(params)
 
-    // 只记学号后四位，够定位问题又不泄露完整账号
-    const tail = String(params.studentId || '').slice(-4)
-    console.log('[schedule] 成功 学号***' + tail + ' → ' + data.kbList.length + ' 条')
+    // 记录学号和姓名，便于定位问题；密码和 mm 密文绝不进日志
+    console.log('[schedule] 成功 学号=' + (params.studentId || '-') +
+      ' 姓名=' + (data.studentName || '-') + ' → ' + data.kbList.length + ' 条')
 
     send(res, 200, { ok: true, data: data })
   } catch (err) {
     // ⚠️ 只记错误信息。绝不能把密码或 mm 密文写进日志
-    console.error('[schedule] 失败:', (err && err.message) || err)
+    console.error('[schedule] 失败 学号=' + (params.studentId || '-') +
+      ' 姓名=-：' + ((err && err.message) || err))
     send(res, 200, { ok: false, message: (err && err.message) || '服务异常' })
   }
 })

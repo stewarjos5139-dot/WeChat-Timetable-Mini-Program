@@ -39,14 +39,21 @@ function sectionStart(n) {
   return t ? toMinutes(t[0]) : NaN
 }
 
+/** 第 n 节的下课时刻（当天第几分钟），越界返回 NaN */
+function sectionEnd(n) {
+  const t = SECTION_TIME[n - 1]
+  return t ? toMinutes(t[1]) : NaN
+}
+
 /**
- * 所有课「上课时间 − 提前分钟数」的合集，去重后从小到大排好。
- * leads 可以传单个数字，也可以传数组（定时器早退时要把所有人的提前量合起来算）。
+ * 所有「换课节次」「上课时间 − 提前分钟数」的合集，去重后从小到大排好。
+ * leads 可以传单个数字，也可以传数组；sections 限定只算哪些节次（不传算全部）。
  */
-function reminderMinutes(leads) {
+function reminderMinutes(leads, sections) {
   const list = Array.isArray(leads) ? leads : [leads]
   const set = {}
-  SECTION_TIME.forEach(function (t) {
+  SECTION_TIME.forEach(function (t, index) {
+    if (sections && sections.indexOf(index + 1) === -1) return
     const start = toMinutes(t[0])
     list.forEach(function (lead) {
       const m = start - lead
@@ -57,14 +64,21 @@ function reminderMinutes(leads) {
 }
 
 /**
- * 当前时刻是不是一个可能的提醒时刻。
- * 定时器有几百毫秒到一分钟的延迟，所以判断窗口取 [m-1, m]，
- * 真正的去重交给 sentKeys。
+ * 定时器每 5 分钟触发一次（仅 7-9、12-15、18 点，见 config.json）。
+ * 允许比提醒时刻晚最多一个周期：某次触发被平台漏掉时，下一个 5 分钟点还能补上；
+ * 已经发过的课程由 sentKeys 去重。
  */
-function isReminderMinute(minutes, leads) {
-  const list = reminderMinutes(leads)
+const TRIGGER_TOLERANCE_MINUTES = 5
+
+/**
+ * 当前时刻是不是一个可能的提醒时刻。
+ * 判断窗口是 [lead, lead + 5]，真正的去重交给 sentKeys。
+ */
+function isReminderMinute(minutes, leads, sections) {
+  const list = reminderMinutes(leads, sections)
   for (let i = 0; i < list.length; i++) {
-    if (minutes === list[i] || minutes - 1 === list[i]) return true
+    const late = minutes - list[i]
+    if (late >= 0 && late <= TRIGGER_TOLERANCE_MINUTES) return true
   }
   return false
 }
@@ -141,7 +155,7 @@ function isActiveInWeek(course, week) {
  * @param {number} leadMinutes 提前几分钟
  * @returns {Array<{course:Object, start:number}>} start 是当天第几分钟
  */
-function matchCourses(courses, ctx, leadMinutes) {
+function matchCourses(courses, ctx, leadMinutes, sections) {
   const out = []
   if (!Array.isArray(courses) || !ctx.week) return out
 
@@ -150,6 +164,8 @@ function matchCourses(courses, ctx, leadMinutes) {
     if (!course || course.day !== ctx.weekday) return
     if (!isActiveInWeek(course, ctx.week)) return
     if (!(course.start >= 1)) return
+    // 只提醒「换课节次」开始的课，其他节次开始的课不单独提醒
+    if (sections && sections.indexOf(Number(course.start)) === -1) return
 
     const start = sectionStart(course.start)
     if (isNaN(start)) return
@@ -157,8 +173,9 @@ function matchCourses(courses, ctx, leadMinutes) {
     const lead = start - leadMinutes
     if (lead < 0) return
     if (reminders.indexOf(lead) === -1) return
-    // 定时器延迟容忍：提醒时刻是现在或上一分钟
-    if (ctx.minutes !== lead && ctx.minutes - 1 !== lead) return
+    // 每 5 分钟触发一次：允许比提醒时刻晚最多一个周期（补上漏掉的触发）
+    const late = ctx.minutes - lead
+    if (late < 0 || late > TRIGGER_TOLERANCE_MINUTES) return
 
     out.push({ course: course, start: start })
   })
@@ -169,6 +186,7 @@ module.exports = {
   SECTION_TIME: SECTION_TIME,
   toMinutes: toMinutes,
   sectionStart: sectionStart,
+  sectionEnd: sectionEnd,
   reminderMinutes: reminderMinutes,
   isReminderMinute: isReminderMinute,
   beijingParts: beijingParts,

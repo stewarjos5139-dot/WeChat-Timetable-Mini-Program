@@ -11,6 +11,8 @@
  */
 
 const config = require('./config')
+const cloud = require('./cloud')
+const store = require('./store')
 
 const CACHE_KEY = 'reminder_status'
 /**
@@ -28,6 +30,8 @@ const REFRESH_MS = 5 * 60 * 1000
 const LEAD_OPTIONS = [5, 10, 15, 20, 30, 45, 60]
 /** 用户没设置过时的缺省提前量 */
 const DEFAULT_LEAD = 20
+/** 服务端允许的最大次数；status 会返回真实值，这里只是首屏兜底 */
+const DEFAULT_MAX_QUOTA = 30
 
 /** 把任意值收敛到白名单里的提前量；非法就退回 fallback，再不行用缺省值 */
 function normalizeLead(value, fallback) {
@@ -60,6 +64,7 @@ function readCache() {
     quota: Math.max(0, Number(raw.quota) || 0),
     needSubscribe: !!raw.needSubscribe,
     leadMinutes: normalizeLead(raw.leadMinutes),
+    maxQuota: Math.max(1, Number(raw.maxQuota) || DEFAULT_MAX_QUOTA),
     at: Number(raw.at) || 0
   }
 }
@@ -73,6 +78,7 @@ function writeCache(status) {
     needSubscribe: !!status.needSubscribe,
     // 服务端没返回提前量时保留本地值，别把用户刚选的覆盖成缺省
     leadMinutes: normalizeLead(status.leadMinutes, prev && prev.leadMinutes),
+    maxQuota: Math.max(1, Number(status.maxQuota) || (prev && prev.maxQuota) || DEFAULT_MAX_QUOTA),
     at: Date.now()
   })
 }
@@ -94,7 +100,9 @@ function call(action, payload) {
         resolve(result)
       },
       fail(err) {
-        console.warn('[reminder] 云函数调用失败：' + ((err && err.errMsg) || ''))
+        const p = store.getProfile() || {}
+        console.warn('[reminder] 云函数调用失败 学号=' + (p.studentId || '-') +
+          ' 姓名=' + (p.name || '-') + '：' + ((err && err.errMsg) || ''))
         resolve({ ok: false, reason: 'network' })
       }
     })
@@ -139,23 +147,35 @@ function requestSubscription() {
 function enable(studentId, leadMinutes) {
   const cache = readCache()
   const lead = normalizeLead(leadMinutes, cache && cache.leadMinutes)
+  const profile = store.getProfile() || {}
+  const name = String(profile.name || '').trim()
 
-  // 还有次数：直接开启，不打扰用户
+  // 本地没有课表时不走订阅流程（不会弹授权框）
+  if (!store.getCourses().length) {
+    return Promise.resolve({ ok: false, reason: 'no-local-schedule' })
+  }
+
+  // 还有次数：后台补传一次，无论成败都继续开启，不打扰用户
   if (cache && cache.quota > 0) {
-    return call('start', { studentId: studentId, leadMinutes: lead })
-      .then(function (res) {
-        return Object.assign({ accepted: 0, reused: true }, res)
-      })
+    return cloud.ensureBackup().catch(function () {}).then(function () {
+      return call('start', { studentId: studentId, name: name, leadMinutes: lead })
+    }).then(function (res) {
+      return Object.assign({ accepted: 0, reused: true }, res)
+    })
   }
 
   // 次数为 0：先攒额度再开启
   const pending = requestSubscription() // 同步发起，别在这一行之前加 await
   return pending.then(function (sub) {
     if (!sub.accepted) return { ok: false, reason: 'no-accept', accepted: 0 }
-    return call('enable', {
-      quota: sub.accepted,
-      studentId: studentId,
-      leadMinutes: lead
+    // 攒到授权后静默补传；同步失败也继续开启，下次启动会自动再传
+    return cloud.ensureBackup().catch(function () {}).then(function () {
+      return call('enable', {
+        quota: sub.accepted,
+        studentId: studentId,
+        name: name,
+        leadMinutes: lead
+      })
     }).then(function (res) {
       return Object.assign({ accepted: sub.accepted }, res)
     })
@@ -213,6 +233,7 @@ module.exports = {
   LOW_QUOTA: LOW_QUOTA,
   LEAD_OPTIONS: LEAD_OPTIONS,
   DEFAULT_LEAD: DEFAULT_LEAD,
+  DEFAULT_MAX_QUOTA: DEFAULT_MAX_QUOTA,
   normalizeLead: normalizeLead,
   supported: supported,
   readCache: readCache,

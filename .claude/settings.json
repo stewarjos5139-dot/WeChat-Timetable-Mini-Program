@@ -17,7 +17,18 @@
       "Bash(rm -rf /tmp/reminder-test)",
       "Bash(node --check utils/config.js)",
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('project.config.json','utf8'\\)\\);console.log\\('project.config.json OK'\\)\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(node /tmp/rt10/t.js)",
+      "Bash(rm -rf /tmp/rt10)",
+      "WebSearch",
+      "Bash(node --check pages/login/login.js)",
+      "Bash(node /tmp/rt15/t.js)",
+      "Bash(rm -rf /tmp/rt15)",
+      "Bash(grep -n \"return { sent: sent, failed: failed }\" cloudfunctions/reminder/index.js)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('cloudfunctions/reminder/config.json','utf8'\\)\\);console.log\\('config.json OK'\\)\")",
+      "Bash(node --check index.js)",
+      "Bash(node --check config.js)",
+      "Bash(git add *)"
     ]
   }
 }

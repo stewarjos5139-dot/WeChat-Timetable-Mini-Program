@@ -1,5 +1,6 @@
 // app.js
 const config = require('./utils/config')
+const cloud = require('./utils/cloud')
 
 App({
   onLaunch() {
@@ -25,6 +26,10 @@ App({
       env: config.CLOUD_ENV,
       traceUser: true
     })
+
+    // 后台静默补传：上次离线改过课表、或上传失败过，在这里补一次。
+    // 不 await、不提示，失败等下次启动 / 切回课表页再试
+    cloud.ensureBackup()
   },
 
   globalData: {

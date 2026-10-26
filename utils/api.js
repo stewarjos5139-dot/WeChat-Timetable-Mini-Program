@@ -32,6 +32,7 @@
  */
 
 const config = require('./config')
+const store = require('./store')
 
 /** 后端还没配好时的错误码，登录页据此给出更具体的提示 */
 const CODE_NO_BACKEND = 'NO_BACKEND'
@@ -100,7 +101,9 @@ function attempt(path, payload, mode, tried, onRetry) {
     if (!retryable || tried >= RETRY_DELAYS.length) {
       if (retryable) {
         // 重试到头了。原始报错留给排查 —— 它不会进用户看到的弹窗
-        console.warn('[api] 重试用完仍连不上：' + ((err && err.message) || ''))
+        const p = store.getProfile() || {}
+        console.warn('[api] 重试用完仍连不上 学号=' + (p.studentId || '-') +
+          ' 姓名=' + (p.name || '-') + '：' + ((err && err.message) || ''))
       }
       throw err
     }

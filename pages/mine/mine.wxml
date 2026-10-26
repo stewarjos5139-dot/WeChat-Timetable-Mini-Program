@@ -114,8 +114,24 @@
       </view>
 
       <view class="card">
+        
+        <view class="row" bindtap="onAuthorNote" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+          <image class="row-icon" src="/assets/icons/book.svg" mode="aspectFit" />
+          <text class="row-label">作者的话</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+        </view>
+
+        <view class="divide"></view>
+
+        <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60" aria-role="button">
+          <image class="row-icon" src="/assets/icons/info.svg" mode="aspectFit" />
+          <text class="row-label">关于 星瞢课表</text>
+          <text class="row-value num">v{{version}}</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+        </view>
+        <view class="divide"></view>
         <!-- 公众号入口：没配原始 ID 时整行不出现 -->
-        <block wx:if="{{officialAccount.username}}">
+      <block wx:if="{{officialAccount.username}}">
           <view
             class="row"
             bindtap="onOpenOfficialAccount"
@@ -131,20 +147,6 @@
           <view class="divide"></view>
         </block>
 
-        <view class="row" bindtap="onAuthorNote" hover-class="row--hover" hover-stay-time="60" aria-role="button">
-          <image class="row-icon" src="/assets/icons/book.svg" mode="aspectFit" />
-          <text class="row-label">作者的话</text>
-          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
-        </view>
-
-        <view class="divide"></view>
-
-        <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60" aria-role="button">
-          <image class="row-icon" src="/assets/icons/info.svg" mode="aspectFit" />
-          <text class="row-label">关于 星瞢课表</text>
-          <text class="row-value num">v{{version}}</text>
-          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
-        </view>
       </view>
     </view>
 
@@ -161,4 +163,7 @@
   </view>
 
   <view class="tabbar-space"></view>
+
+  <!-- 轻提示：贴屏幕下方，不遮挡正在操作的内容 -->
+  <view class="page-tip {{tipShow ? 'page-tip--show' : ''}}">{{tipText}}</view>
 </view>

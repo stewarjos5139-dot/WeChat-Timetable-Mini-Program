@@ -48,8 +48,8 @@
   <view class="form-hint">「开学周一」填本学期第 1 周的周一。课表靠它推算每个星期的日期，填错会让整张表的周次和日期偏移。</view>
   <!-- 提交 -->
   <view class="btn submit {{backendReady ? '' : 'submit--off'}}" bindtap="onSubmit" hover-class="btn--hover" hover-stay-time="60" aria-role="button">
-    <text wx:if="{{loading}}">{{loadingText}}</text>
-    <text wx:else>导入课表</text>
+    <view class="submit-bar" wx:if="{{loading}}" style="width: {{progress}}%;"></view>
+    <text class="submit-text">{{loading ? loadingText + ' ' + progress + '%' : '导入课表'}}</text>
   </view>
   <!-- 后端未配置的提示 -->
   <view class="notice" wx:if="{{!backendReady}}">
@@ -94,6 +94,43 @@
       <view class="btn btn--ghost" wx:for="{{result.actions}}" wx:key="key" data-key="{{item.key}}" bindtap="onResultAction" hover-class="btn--ghost-hover" hover-stay-time="60" aria-role="button">
         {{item.label}}
       </view>
+    </view>
+  </view>
+</view>
+
+<!-- ============ 导入前确认 ============
+     点「导入课表」先不发起请求，让用户核对学年 / 学期 / 开学周一；
+     已有课表的覆盖提醒也合并进这张卡片，不再二次弹窗 -->
+<view class="dialog" wx:if="{{confirmVisible}}" catchtouchmove="noop" catchtap="noop">
+  <view class="dialog-card confirm-card" aria-role="dialog" aria-label="确认导入设置">
+    <text class="dialog-title">确认导入设置</text>
+    <text class="dialog-line">请核对下面的信息，导入后将按这些设置生成课表。</text>
+
+    <view class="confirm-list">
+      <view class="confirm-row">
+        <text class="confirm-k">学号</text>
+        <text class="confirm-v num">{{confirm.studentId}}</text>
+      </view>
+      <view class="confirm-row">
+        <text class="confirm-k">学年</text>
+        <text class="confirm-v">{{confirm.yearLabel}}</text>
+      </view>
+      <view class="confirm-row">
+        <text class="confirm-k">学期</text>
+        <text class="confirm-v">{{confirm.termLabel}}</text>
+      </view>
+      <view class="confirm-row">
+        <text class="confirm-k">开学周一</text>
+        <text class="confirm-v num">{{confirm.startDate}} {{confirm.weekdayText}}</text>
+      </view>
+    </view>
+
+    <text class="confirm-warn" wx:if="{{!confirm.isMonday}}">所选日期不是周一，课表的周次和日期会整体偏移，建议返回重新选择。</text>
+    <text class="confirm-warn" wx:if="{{confirm.overwrite}}">导入会覆盖现有课表，手动添加和编辑过的课程也会被替换。</text>
+
+    <view class="dialog-actions dialog-actions--row">
+      <view class="btn btn--ghost" bindtap="onCancelConfirm" hover-class="btn--ghost-hover" hover-stay-time="60" aria-role="button">返回修改</view>
+      <view class="btn" bindtap="onConfirmImport" hover-class="btn--hover" hover-stay-time="60" aria-role="button">确认无误，导入</view>
     </view>
   </view>
 </view>

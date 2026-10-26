@@ -408,6 +408,9 @@ Page({
     // 先拿本地缓存渲染，status 内部 5 分钟才向云端确认一次
     this.applyRemindTip(reminder.readCache())
     reminder.status().then(state => this.applyRemindTip(state))
+
+    // 云端那份也是提醒的数据源：回到课表页顺手补传一次，失败静默
+    cloud.ensureBackup()
   },
 
   onHide() {
@@ -565,8 +568,13 @@ Page({
   refresh() {
     store.setCourses(this._courses)
     this._stamp = store.getStamp()
-    // 手动增删改也算数据变化，同步一份到云端。失败静默
-    cloud.backup()
+    // 手动增删改也算数据变化，后台补传到云端（提醒读这份镜像）。失败静默
+    cloud.ensureBackup()
+
+    // 本地被删空时提醒也停掉：云端那份是「从云端恢复」用的，不会被空课表覆盖，
+    // 不停的话会继续按旧副本发提醒
+    if (!this._courses.length) reminder.disable()
+
     this.setData({ isEmpty: this._courses.length === 0 })
     this.goWeek(this.data.week)
   },

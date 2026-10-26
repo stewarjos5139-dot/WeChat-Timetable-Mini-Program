@@ -177,3 +177,30 @@
   line-height: 1.65;
   color: var(--text-3);
 }
+
+/* ---------- 底部轻提示 ----------
+ * 不用 wx.showToast：它固定弹在屏幕正中，会盖住正在看的卡片。
+ * 这里贴在自定义 tabBar 上方，只在需要的地方替换。 */
+.page-tip {
+  position: fixed;
+  left: 50%;
+  bottom: calc(160rpx + env(safe-area-inset-bottom));
+  z-index: var(--z-sheet-top);
+  max-width: 76%;
+  padding: 18rpx 34rpx;
+  border-radius: var(--r-full);
+  background: rgba(28, 28, 30, 0.9);
+  color: #fff;
+  font-size: 26rpx;
+  line-height: 1.45;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 16rpx);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.page-tip--show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

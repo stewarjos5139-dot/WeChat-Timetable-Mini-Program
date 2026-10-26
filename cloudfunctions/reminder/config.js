@@ -29,13 +29,20 @@ module.exports = {
   ALLOWED_LEAD_MINUTES: [5, 10, 15, 20, 30, 45, 60],
 
   /*
+   * 只有这些节次可能是「换课」的开始节次：
+   *   上午 1-2、3-5；下午 6-7、8-10；晚上 11-13。
+   * 提醒只在它们开始前的 60 分钟内检查，其他节次开始的课程不会单独提醒。
+   */
+  BLOCK_START_SECTIONS: [1, 3, 6, 8, 11],
+
+  /*
    * 一次点击最多能换多少条额度。微信规定一次点击只能发起一次订阅授权、
    * 一次授权 = 一条消息，所以这里是 1（与客户端 utils/reminder.js 的 MAX_PER_TAP 一致）。
    */
   MAX_QUOTA_PER_TAP: 1,
 
   /* 额度上限，防止客户端把数字报到离谱 */
-  MAX_QUOTA: 50,
+  MAX_QUOTA: 30,
 
   /**
    * 消息点开后跳到哪一页。
@@ -43,7 +50,18 @@ module.exports = {
    * 取值：'developer' | 'trial' | 'formal'
    */
   PAGE: 'pages/schedule/schedule',
-  MINIPROGRAM_STATE: 'formal',
+  MINIPROGRAM_STATE: 'trial',
+
+  /* ── 云调用票据兜底 ──
+   * 定时触发器不是在微信开发者工具里创建的（比如网页控制台手动新建）时，
+   * cloud.openapi 没有票据，会报 -501007 Invalid wxCloudApiToken。
+   * 这时改用网页 API 直连：AppID + AppSecret 换 access_token 再发。
+   * APPID 是公开信息；APPSECRET 不要写进代码，放在云函数环境变量里。
+   * 环境变量：云开发控制台 → 云函数 → reminder → 配置 → 环境变量（名字见 APPSECRET_ENV）。
+   * 不配也不影响：只会少一条兜底，主通道正常时用不到。
+   */
+  APPID: 'wxce6f1ae59bd24476',
+  APPSECRET_ENV: 'WX_APPSECRET',
 
   /* ── 模板字段映射 ──
    * 「日程提醒」模板的五个字段：
@@ -77,6 +95,8 @@ module.exports = {
   /* 集合名 */
   COLLECTIONS: {
     reminders: 'reminders',
-    schedules: 'schedules'
+    schedules: 'schedules',
+    // 重要行为日志（控制台日志要会员，这里落一份到数据库）
+    logs: 'reminder_logs'
   }
 }

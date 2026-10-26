@@ -4,6 +4,20 @@ const store = require('../../utils/store')
 const parser = require('../../utils/parser')
 const cloud = require('../../utils/cloud')
 
+/**
+ * 导入过程中的播报文案：只放积极 / 中性的说法，按顺序轮播，
+ * 不和真实请求阶段严格对应 —— 目的是让用户知道程序还在正常干活。
+ */
+const LOADING_TEXTS = [
+  '正在连接教务系统…',
+  '正在登录中…',
+  '正在获取课表…',
+  '成功获取课表…',
+  '正在解析课表…',
+  '正在整理课程…'
+]
+const LOADING_TEXT_INTERVAL = 2400
+
 /** 「2026-2027 学年 · 第一学期」。拼法和 pages/mine 的 subText 保持一致 */
 function termLabelOf(term) {
   const startYear = parseInt(term.xnm, 10)
@@ -26,8 +40,12 @@ Page({
     termIndex: 0,
     startDate: '', // 第 1 周周一，'YYYY-MM-DD'
     loading: false,
-    loadingText: '正在导入…',
+    loadingText: '正在连接教务系统…',
+    progress: 0,
     backendReady: false,
+    // 导入前的设置确认卡片
+    confirmVisible: false,
+    confirm: null,
     result: null // 导入结果卡片，null 表示不显示
   },
 
@@ -105,24 +123,100 @@ Page({
       xqm: this.data.termOptions[this.data.termIndex].value,
       startDate: this.data.startDate
     }
+    this._params = params
 
-    const start = () => {
-      this.setData({ loading: true, loadingText: '正在导入…' })
-      this.doImport(params)
-    }
+    // 先让用户核对一遍设置；确认后才真正开始导入
+    const parts = String(this.data.startDate).split('-')
+    const day = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+    const valid = !isNaN(day.getTime())
+    const WEEKDAY = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
-    // 重新导入会整体覆盖现有课表（包括手动添加和编辑过的课程），先确认
-    if (store.getCourses().length === 0) {
-      start()
-      return
-    }
-    wx.showModal({
-      title: '覆盖现有课表？',
-      content: '重新导入会用教务系统的数据替换当前全部课程，你手动添加和编辑过的课程也会被覆盖。',
-      confirmText: '继续导入',
-      confirmColor: '#B3402F',
-      success: res => { if (res.confirm) start() }
+    this.setData({
+      confirmVisible: true,
+      confirm: {
+        studentId: studentId,
+        yearLabel: this.data.yearOptions[this.data.yearIndex].label,
+        termLabel: this.data.termOptions[this.data.termIndex].label,
+        startDate: this.data.startDate,
+        weekdayText: valid ? WEEKDAY[day.getDay()] : '',
+        isMonday: valid && day.getDay() === 1,
+        overwrite: store.getCourses().length > 0
+      }
     })
+  },
+
+  /** 确认卡片：返回修改 */
+  onCancelConfirm() {
+    this.setData({ confirmVisible: false })
+  },
+
+  /** 确认卡片：确认无误，开始导入 */
+  onConfirmImport() {
+    if (this.data.loading) return
+    const params = this._params
+    if (!params) return
+    this.setData({ confirmVisible: false })
+    this.startImport(params)
+  },
+
+  /** 开始导入：按钮进入 loading，进度条和播报文案开始走 */
+  startImport(params) {
+    console.log('[login] 开始导入 学号=' + (params.studentId || '-') +
+      ' 学年=' + (params.xnm || '-') + ' 学期=' + (params.xqm || '-') +
+      ' 开学周一=' + (params.startDate || '-'))
+    this.setData({ loading: true, progress: 4 })
+    this.startMessages()
+    this.startProgress()
+    this.doImport(params)
+  },
+
+  /** 播报文案按顺序轮播，不和真实阶段严格对应 */
+  startMessages() {
+    this.stopMessages()
+    this._msgIndex = 0
+    this.setData({ loadingText: LOADING_TEXTS[0] })
+    this._msgTimer = setInterval(() => {
+      this._msgIndex = (this._msgIndex + 1) % LOADING_TEXTS.length
+      this.setData({ loadingText: LOADING_TEXTS[this._msgIndex] })
+    }, LOADING_TEXT_INTERVAL)
+  },
+
+  stopMessages() {
+    if (this._msgTimer) {
+      clearInterval(this._msgTimer)
+      this._msgTimer = null
+    }
+  },
+
+  /** 进度条：慢慢逼近 92%，真正的跳档由 doImport 里的阶段推进 */
+  startProgress() {
+    // 只清进度定时器；播报定时器由 startMessages 单独管，别在这里顺手停掉
+    if (this._progressTimer) {
+      clearInterval(this._progressTimer)
+      this._progressTimer = null
+    }
+    this._progressTimer = setInterval(() => {
+      const p = this.data.progress
+      if (p >= 92) return
+      const step = Math.max(1, Math.round((92 - p) * 0.08))
+      this.setData({ progress: Math.min(92, p + step) })
+    }, 300)
+  },
+
+  stopProgress() {
+    this.stopMessages()
+    if (this._progressTimer) {
+      clearInterval(this._progressTimer)
+      this._progressTimer = null
+    }
+    if (this._finishTimer) {
+      clearTimeout(this._finishTimer)
+      this._finishTimer = null
+    }
+  },
+
+  onUnload() {
+    this.stopProgress()
   },
 
   doImport(params) {
@@ -131,10 +225,18 @@ Page({
     this._params = params
 
     api.fetchSchedule(params, function (attempt) {
-      // 一旦开始重试就把文案换掉 —— 否则用户看到的就是「卡住了」
-      if (attempt === 1) self.setData({ loadingText: '正在解析课表…' })
+      // 真实重试也不说「重试」：只把进度往前抬一档，文案继续正常轮播
+      self.setData({
+        progress: Math.max(self.data.progress, attempt === 1 ? 30 : 55)
+      })
     })
       .then(function (res) {
+        self.stopMessages()
+        self.setData({
+          loadingText: '正在解析课表…',
+          progress: Math.max(self.data.progress, 85)
+        })
+
         const term = store.getTerm()
         const courses = parser.parseKbList(res.kbList, { totalWeeks: term.totalWeeks })
 
@@ -156,16 +258,33 @@ Page({
           name: res.studentName || ''
         })
 
+        console.log('[login] 导入成功 学号=' + (params.studentId || '-') +
+          ' 姓名=' + (res.studentName || '-') + ' 课程=' + courses.length + ' 条')
+
         // 静默传一份到云端，重装 / 换机时能恢复。失败不打扰用户
         cloud.backup()
 
-        self.setData({
-          loading: false,
-          result: self.okResult(parser.summarize(courses).courses, res.studentName)
-        })
+        self.stopProgress()
+        self.setData({ progress: 100 })
+
+        // 让 100% 闪一下再切到结果卡片
+        self._finishTimer = setTimeout(function () {
+          self._finishTimer = null
+          self.setData({
+            loading: false,
+            progress: 0,
+            result: self.okResult(parser.summarize(courses).courses, res.studentName)
+          })
+        }, 220)
       })
       .catch(function (err) {
-        self.setData({ loading: false })
+        self.stopProgress()
+        self.setData({ loading: false, progress: 0 })
+
+        const p = store.getProfile() || {}
+        console.warn('[login] 导入失败 学号=' + (params.studentId || '-') +
+          ' 姓名=' + (p.name || '-') + ' 错误码=' + ((err && err.code) || '-') +
+          '：' + ((err && err.message) || err))
 
         if (err && err.code === api.CODE_NO_BACKEND) {
           self.showBackendTip()
@@ -232,8 +351,7 @@ Page({
 
     // 中间层通了，但它登录教务系统失败 —— 绝大多数是学号或密码不对。
     // 只留一个按钮：回表单改完直接再点「导入课表」就是重试，不用在这儿再给一个。
-    // 后端那句原文只进 console，卡片上不出现
-    console.warn('[login] 导入失败：' + ((err && err.message) || ''))
+    // 后端那句原文只进 console（在 doImport 的 catch 里统一记录），卡片上不出现
     return {
       ok: false,
       title: '登录失败',
@@ -254,10 +372,7 @@ Page({
     if (key === 'retry') {
       const params = this._params
       this.setData({ result: null })
-      if (params) {
-        this.setData({ loading: true, loadingText: '正在导入…' })
-        this.doImport(params)
-      }
+      if (params) this.startImport(params)
       return
     }
 

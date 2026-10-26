@@ -5,6 +5,10 @@
  * 本地存储是唯一真相，云端只是保险箱 —— **上传自动、恢复手动**（入口在「我的」）。
  * 不做双向同步，所以没有冲突合并的问题。
  *
+ * 云端这份同时是上课提醒的数据源（服务端读不到手机本地存储），
+ * 所以每次启动、切回课表页、开启提醒前都会用 ensureBackup() 静默补传，
+ * 保证服务端读到的是本地最新的课表。
+ *
  * 所有函数都**不往外抛异常**：云上出问题不能让小程序本身不能用。
  *
  * 一条记录的 **_id 就是学号** —— 一个学号一条，物理上不可能重复；
@@ -22,6 +26,9 @@ const COLLECTION = 'schedules'
 
 /** 数据结构版本。以后改字段时加一，restore 里判断不认就跳过、不硬塞 */
 const SCHEMA_VERSION = 1
+
+/** 最近一次成功上传对应的本地 stamp。用来判断云端镜像是不是最新的 */
+const KEY_BACKUP_STAMP = 'schedule_backup_stamp'
 
 /** 云环境没配（或基础库太老没有云能力）时，所有操作都当成「没有云」直接跳过 */
 function available() {
@@ -53,23 +60,43 @@ function findDoc(studentId) {
     })
 }
 
+/** 最近一次成功上传对应的本地 stamp；没备份过是 0 */
+function readBackupStamp() {
+  return Number(wx.getStorageSync(KEY_BACKUP_STAMP)) || 0
+}
+
+function writeBackupStamp(stamp) {
+  try {
+    wx.setStorageSync(KEY_BACKUP_STAMP, Number(stamp) || 0)
+  } catch (err) {
+    // 存不下标记不影响主流程，下次会多重传一次而已
+  }
+}
+
 /**
  * 把本地四样（学号 / 课表 / 学期设置 / 姓名）打包上传。
  * 学号当 _id，set 是覆盖式的 —— 有就整体替换，没有就新建，不会越堆越多。
  *
- * **没有学号就跳过**：不知道往哪条上写。没导入过课表的话本来也没什么可备份的。
+ * **没有学号就跳过**；**本地课表为空也跳过** —— 云端那份是「从云端恢复」用的，
+ * 不能被清空后的本地状态盖掉。
  *
- * 失败**静默** —— 用户没主动要求备份，不该被弹窗打断，下次数据变化再补上。
+ * 不往外抛异常，返回 { ok, reason }；失败时不更新标记，下次自动重试。
  */
 function backup() {
-  if (!available()) return Promise.resolve()
+  if (!available()) return Promise.resolve({ ok: false, reason: 'no-backend' })
 
   const studentId = localId()
-  if (!studentId) return Promise.resolve()
+  if (!studentId) return Promise.resolve({ ok: false, reason: 'no-account' })
+
+  const courses = store.getCourses()
+  if (!courses.length) return Promise.resolve({ ok: false, reason: 'empty' })
+
+  // 先记下上传前的 stamp：上传期间又改了课，标记就对不上，下次会再传一遍
+  const stamp = store.getStamp()
 
   const payload = {
     studentId: studentId,
-    courses: store.getCourses(),
+    courses: courses,
     term: store.getTerm(),
     profile: store.getProfile(),
     schemaVersion: SCHEMA_VERSION,
@@ -79,9 +106,47 @@ function backup() {
   return wx.cloud.database().collection(COLLECTION)
     .doc(studentId)
     .set({ data: payload })
-    .catch(function (err) {
-      console.warn('[cloud] 备份失败（已忽略）:', (err && err.errMsg) || err)
+    .then(function () {
+      writeBackupStamp(stamp)
+      console.log('[cloud] 备份成功 学号=' + studentId +
+        ' 姓名=' + ((payload.profile && payload.profile.name) || '-') +
+        ' 课程=' + courses.length + ' 门')
+      return { ok: true, reason: '' }
     })
+    .catch(function (err) {
+      console.warn('[cloud] 备份失败 学号=' + studentId +
+        ' 姓名=' + ((payload.profile && payload.profile.name) || '-') +
+        '（下次自动重试）：' + ((err && err.errMsg) || err))
+      return { ok: false, reason: 'error' }
+    })
+}
+
+/** 云端镜像是不是落后于本地。空课表、没学号、没云环境都不需要补传 */
+function needsBackup() {
+  if (!available()) return false
+  if (!localId()) return false
+  if (!store.getCourses().length) return false
+  return store.getStamp() !== readBackupStamp()
+}
+
+let pendingBackup = null
+
+/**
+ * 后台静默补传：已是最新就什么都不做；正在传就复用同一个 Promise。
+ * 永远 resolve，调用方不用 catch，也不用给用户任何提示。
+ */
+function ensureBackup() {
+  if (!available()) return Promise.resolve({ ok: false, reason: 'no-backend' })
+  if (!localId()) return Promise.resolve({ ok: false, reason: 'no-account' })
+  if (!store.getCourses().length) return Promise.resolve({ ok: false, reason: 'empty' })
+  if (!needsBackup()) return Promise.resolve({ ok: true, reason: '' })
+  if (pendingBackup) return pendingBackup
+
+  pendingBackup = backup().then(function (res) {
+    pendingBackup = null
+    return res
+  })
+  return pendingBackup
 }
 
 /**
@@ -123,11 +188,15 @@ function restore(studentId) {
       store.setCourses(courses)
       if (doc.term) store.setTerm(doc.term)
       if (doc.profile && doc.profile.studentId) store.setProfile(doc.profile)
+      // 本地刚刚和云端对齐，标记为已同步，下次启动不会重复上传
+      writeBackupStamp(store.getStamp())
 
+      const name = (doc.profile && doc.profile.name) || '-'
+      console.log('[cloud] 恢复成功 学号=' + id + ' 姓名=' + name + ' 课程=' + courses.length + ' 门')
       return { ok: true, count: parser.summarize(courses).courses, reason: '' }
     })
     .catch(function (err) {
-      console.warn('[cloud] 恢复失败:', err)
+      console.warn('[cloud] 恢复失败 学号=' + id + '：', err)
       return {
         ok: false,
         count: 0,
@@ -140,5 +209,7 @@ function restore(studentId) {
 module.exports = {
   available: available,
   backup: backup,
+  ensureBackup: ensureBackup,
+  needsBackup: needsBackup,
   restore: restore
 }

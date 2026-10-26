@@ -6,9 +6,9 @@
   },
   "triggers": [
     {
-      "name": "reminderEveryMinute",
+      "name": "reminderEvery5Min",
       "type": "timer",
-      "config": "0 * * * * * *"
+      "config": "0 */5 7-9,12-15,18 * * * *"
     }
   ]
 }

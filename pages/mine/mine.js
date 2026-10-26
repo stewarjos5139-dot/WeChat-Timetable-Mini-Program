@@ -22,6 +22,7 @@ Page({
     // 上课提醒
     remindOn: false,          // 开关
     remindQuota: 0,           // 剩余可发条数
+    remindMax: reminder.DEFAULT_MAX_QUOTA,
     remindQuotaText: '未开启', // 次数那一行的右侧文案
     remindLead: reminder.DEFAULT_LEAD,
     leadLabels: LEAD_LABELS,
@@ -32,7 +33,25 @@ Page({
     loggedIn: false,
     name: '',
     initial: '',   // 姓名首字，做头像用
-    subText: ''
+    subText: '',
+
+    // 底部轻提示（替代 wx.showToast，后者固定弹在屏幕正中）
+    tipText: '',
+    tipShow: false
+  },
+
+  /** 贴底提示，1.8 秒后自动收起 */
+  tip(text) {
+    if (!text) return
+    clearTimeout(this._tipTimer)
+    this.setData({ tipText: text, tipShow: true })
+    this._tipTimer = setTimeout(() => {
+      this.setData({ tipShow: false })
+    }, 1800)
+  },
+
+  onUnload() {
+    clearTimeout(this._tipTimer)
   },
 
   onShow() {
@@ -83,15 +102,19 @@ Page({
     const lead = reminder.normalizeLead(state && state.leadMinutes, this.data.remindLead)
     const on = !!(state && state.enabled)
     const quota = Math.max(0, Number(state && state.quota) || 0)
+    const max = Math.max(1, Number(state && state.maxQuota) || this.data.remindMax)
 
     let quotaText = '未开启'
     if (on) {
-      quotaText = (state.needSubscribe || quota <= 0) ? '已用完' : '还剩 ' + quota + ' 次'
+      if (state.needSubscribe || quota <= 0) quotaText = '已用完'
+      else if (quota >= max) quotaText = '已满 · ' + quota + ' 次'
+      else quotaText = '还剩 ' + quota + ' 次'
     }
 
     this.setData({
       remindOn: on,
       remindQuota: quota,
+      remindMax: max,
       remindQuotaText: quotaText,
       remindLead: lead,
       leadIndex: LEAD_OPTIONS.indexOf(lead)
@@ -127,18 +150,19 @@ Page({
     // 刷新一次缓存，用户再点一下就会走订阅授权
     if (res.reason === 'no-quota') {
       reminder.status(true)
-      wx.showToast({ title: '次数不足，再点一次开启', icon: 'none' })
+      this.tip('次数不足，再点一次开启')
       return
     }
 
     const tips = {
       'no-accept': '需要授权才能提醒',
+      'no-local-schedule': '先导入课表',
       'not-owner': '请先导入自己的课表',
       'not-enabled': '先开启提醒',
       'network': '网络异常，稍后再试',
       'unsupported': '提醒功能未配置'
     }
-    wx.showToast({ title: tips[res.reason] || '操作失败，稍后再试', icon: 'none' })
+    this.tip(tips[res.reason] || '操作失败，稍后再试')
   },
 
   /**
@@ -161,7 +185,7 @@ Page({
 
     const profile = store.getProfile()
     if (!profile || !profile.studentId) {
-      wx.showToast({ title: '先导入课表', icon: 'none' })
+      this.tip('先导入课表')
       return
     }
 
@@ -171,7 +195,7 @@ Page({
       this._remindBusy = false
       if (res.ok) {
         this.applyReminder(res)
-        wx.showToast({ title: '已开启提醒', icon: 'none' })
+        this.tip('已开启提醒')
         return
       }
       this.handleRemindError(res)
@@ -183,7 +207,13 @@ Page({
     if (this._remindBusy) return
 
     if (!this.data.remindOn) {
-      wx.showToast({ title: '先开启提醒', icon: 'none' })
+      this.tip('先开启提醒')
+      return
+    }
+
+    // 到上限就别再弹订阅授权了，服务端也不会再加
+    if (this.data.remindQuota >= this.data.remindMax) {
+      this.tip('提醒次数已满（' + this.data.remindMax + ' 次）')
       return
     }
 
@@ -197,7 +227,7 @@ Page({
       this._remindBusy = false
       if (res.ok) {
         this.applyReminder(res)
-        wx.showToast({ title: '已获取 ' + res.accepted + ' 次', icon: 'none' })
+        this.tip('已获取 ' + res.accepted + ' 次')
         return
       }
       this.handleRemindError(res)
@@ -215,10 +245,11 @@ Page({
     reminder.setLead(minutes).then(res => {
       if (res.ok) {
         this.applyReminder(res)
+        this.tip('成功设置课前 ' + minutes + ' 分钟提醒')
         return
       }
       if (res.reason === 'network') {
-        wx.showToast({ title: '设置未同步，稍后重试', icon: 'none' })
+        this.tip('设置未同步，稍后重试')
       }
     })
   },
@@ -230,10 +261,10 @@ Page({
       this._remindBusy = false
       if (state && state.ok) {
         this.applyReminder(state)
-        wx.showToast({ title: '已关闭', icon: 'none' })
+        this.tip('已关闭')
         return
       }
-      wx.showToast({ title: '操作失败，稍后再试', icon: 'none' })
+      this.tip('操作失败，稍后再试')
     })
   },
 
@@ -243,7 +274,7 @@ Page({
 
   onClearSchedule() {
     if (!this.data.hasSchedule) {
-      wx.showToast({ title: '还没有导入课表', icon: 'none' })
+      this.tip('还没有导入课表')
       return
     }
 
@@ -265,7 +296,7 @@ Page({
           })
         }
         self.refresh()
-        wx.showToast({ title: '已清除', icon: 'none' })
+        this.tip('已清除')
       }
     })
   },
@@ -310,7 +341,7 @@ Page({
 
       if (res.ok) {
         this.refresh()
-        wx.showToast({ title: '已恢复 ' + res.count + ' 门课', icon: 'success' })
+        this.tip('已恢复 ' + res.count + ' 门课')
         return
       }
 
@@ -385,7 +416,7 @@ Page({
         if (!res.confirm) return
         wx.setClipboardData({
           data: name,
-          success: () => wx.showToast({ title: '名称已复制', icon: 'none' })
+          success: () => this.tip('名称已复制')
         })
       }
     })
