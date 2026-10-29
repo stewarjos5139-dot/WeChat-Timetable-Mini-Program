@@ -189,6 +189,19 @@
           <view class="divide"></view>
         </block>
 
+        <!-- 分享给同学：open-type="share" 走 onShareAppMessage -->
+        <button
+          class="row row-btn"
+          open-type="share"
+          hover-class="row--hover"
+          hover-stay-time="60"
+          aria-role="button"
+        >
+          <image class="row-icon" src="/assets/icons/share.svg" mode="aspectFit" />
+          <text class="row-label">分享给同学</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+        </button>
+
       </view>
     </view>
 

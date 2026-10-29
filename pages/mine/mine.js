@@ -3,8 +3,9 @@ const config = require('../../utils/config')
 const store = require('../../utils/store')
 const cloud = require('../../utils/cloud')
 const reminder = require('../../utils/reminder')
+const share = require('../../utils/share')
 
-const VERSION = '0.2.0'
+const VERSION = '0.2.1'
 
 /** 可选的课前提醒分钟数，来自 utils/reminder.js（与服务端白名单一致） */
 const LEAD_OPTIONS = reminder.LEAD_OPTIONS
@@ -77,10 +78,30 @@ Page({
     this.measureFontBar()
   },
 
+  /* ─── 分享 ───
+   * 「分享给同学」用的是 <button open-type="share">，走的就是下面这个回调；
+   * 右上角「···」里的转发和分享到朋友圈也走这里。 */
+
+  onShareAppMessage() {
+    return {
+      title: config.SHARE.title,
+      path: '/pages/schedule/schedule',
+      imageUrl: '/assets/share/cover.png'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: config.SHARE.timelineTitle,
+      imageUrl: '/assets/share/cover.png'
+    }
+  },
+
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 })
     }
+    share.enableMenu()
     this.refresh()
     this.refreshReminder()
 

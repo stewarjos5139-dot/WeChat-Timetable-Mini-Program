@@ -1,4 +1,5 @@
 // pages/wheel/wheel.js
+const share = require('../../utils/share')
 
 /** 预设模板。key 是稳定标识 —— 别改也别删，改了就相当于「换了一个新模板」，
  *  老用户那边已删除的那个会被当成没种过、又冒回来。 */
@@ -232,6 +233,22 @@ Page({
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 1 })
+    }
+    share.enableMenu()
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '转一下，别再纠结了｜星瞢课表',
+      path: '/pages/wheel/wheel',
+      imageUrl: '/assets/share/cover.png'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: '转一下，别再纠结了｜星瞢课表',
+      imageUrl: '/assets/share/cover.png'
     }
   },
 

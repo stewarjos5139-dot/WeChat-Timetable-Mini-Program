@@ -313,3 +313,21 @@
   font-weight: 600;
   color: var(--accent);
 }
+
+/* ---------- 用 button 做的列表行（分享给同学） ----------
+ * 原生 button 自带灰底、圆角、内边距和 ::after 边框，
+ * 这里全部清掉，让它的外观和 .row 完全一致。 */
+.row-btn {
+  width: 100%;
+  padding: 0 28rpx;
+  background: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  line-height: normal;
+  text-align: left;
+  color: inherit;
+}
+
+.row-btn::after {
+  border: none;
+}

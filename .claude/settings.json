@@ -34,7 +34,14 @@
       "Read(//c/Program Files/Tencent/微信web开发者工具/**)",
       "Bash(awk -F'\\(' '{print $1}')",
       "mcp__claude-vscode__getDiagnostics",
-      "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('cloudfunctions/reminder/config.json','utf8'\\)\\)\\)\\)\")"
+      "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('cloudfunctions/reminder/config.json','utf8'\\)\\)\\)\\)\")",
+      "Bash(gh auth *)",
+      "Bash(xargs -0 grep -inE \"\\(password|passwd|secret|token|apikey|api_key|private[_-]?key|BEGIN RSA|ssh-rsa\\)\")",
+      "Bash(grep -rniE \"\\(2025|2024\\)[0-9]{7,}\" server/ utils/ pages/)",
+      "Bash(git config *)",
+      "Bash(command -v winget)",
+      "Bash(command -v scoop)",
+      "Bash(command -v curl)"
     ]
   }
 }

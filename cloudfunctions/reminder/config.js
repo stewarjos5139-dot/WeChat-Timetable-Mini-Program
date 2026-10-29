@@ -50,7 +50,7 @@ module.exports = {
    * 取值：'developer' | 'trial' | 'formal'
    */
   PAGE: 'pages/schedule/schedule',
-  MINIPROGRAM_STATE: 'trial',
+  MINIPROGRAM_STATE: 'formal',
 
   /* ── 云调用票据兜底 ──
    * 定时触发器不是在微信开发者工具里创建的（比如网页控制台手动新建）时，

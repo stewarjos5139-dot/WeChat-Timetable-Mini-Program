@@ -42,5 +42,16 @@ module.exports = {
   OFFICIAL_ACCOUNT: {
     username: 'gh_b2a6bdfb2a5e',
     name: ''
+  },
+
+  /**
+   * 分享文案。各页面的 onShareAppMessage / onShareTimeline 都从这里取，
+   * 想换推广语只改这一处，不用翻每个页面。
+   * 分享卡片默认用当前页截图做封面；要换图就给 onShareAppMessage 传 imageUrl（5:4）。
+   */
+  SHARE: {
+    title: '星瞢课表 · 河南财经政法大学课表',
+    timelineTitle: '星瞢课表 · 无广告的校园课表工具',
+    desc: '导入教务系统课表，课前微信提醒，无广告无会员'
   }
 }

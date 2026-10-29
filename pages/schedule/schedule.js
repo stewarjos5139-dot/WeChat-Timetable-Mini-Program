@@ -1,4 +1,6 @@
 // pages/schedule/schedule.js
+const config = require('../../utils/config')
+const share = require('../../utils/share')
 const store = require('../../utils/store')
 const cloud = require('../../utils/cloud')
 const reminder = require('../../utils/reminder')
@@ -404,6 +406,9 @@ Page({
       this.getTabBar().setData({ selected: 0 })
     }
 
+    // 右上角「···」里放出转发和分享到朋友圈
+    share.enableMenu()
+
     // 从导入页返回时课表可能变了，重建一次；没变就不动，免得把翻到的周次弹回去
     const stamp = store.getStamp()
     if (stamp !== this._stamp) {
@@ -433,6 +438,27 @@ Page({
     const scale = store.FONT_LEVELS[index].scale
     if (index === this.data.fontIndex && scale === this.data.blockScale) return
     this.setData({ fontIndex: index, blockScale: scale })
+  },
+
+  /* ─── 分享 ───
+   * 页面没有 onShareAppMessage 时，右上角「···」里的「转发」是灰的，
+   * 这就是之前小程序分享不出去的原因。 */
+
+  onShareAppMessage() {
+    const week = Number(this.data.week) || 1
+    return {
+      title: '第 ' + week + ' 周课表｜' + config.SHARE.title,
+      path: '/pages/schedule/schedule',
+      // 固定封面，避免默认截当前页把你的课表带出去
+      imageUrl: '/assets/share/cover.png'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: config.SHARE.timelineTitle,
+      imageUrl: '/assets/share/cover.png'
+    }
   },
 
   onHide() {
