@@ -21,26 +21,24 @@ const tt = require('./timetable')
 const REMINDERS = config.COLLECTIONS.reminders
 const SCHEDULES = config.COLLECTIONS.schedules
 
+/** 一轮里同时处理多少个用户。全是网络等待，10 路对云函数很安全 */
+const SEND_CONCURRENCY = 10
+/** 批量读课表时一次查多少个学号（云数据库单次上限就是 100） */
+const SCHEDULE_BATCH = 100
+
 exports.main = async function (event) {
   const wxCtx = cloud.getWXContext()
   const data = event || {}
 
-  // 定时触发器和云开发控制台的测试调用没有 OPENID。
-  // 客户端就算伪造 Type:'Timer' 也一定带 OPENID，进不了这条分支。
-  if (data.Type === 'Timer' && !wxCtx.OPENID) {
-    return onTimer(data)
-  }
+  // 诊断只读接口：小程序端和云开发控制台都能调
+  if (data.action === 'debug') return debug(wxCtx.OPENID, data)
+  if (data.action === 'probeToken') return probeToken()
+  if (data.action === 'timerTrail') return timerTrail()
 
-  // 诊断只读接口：小程序端看自己，云开发控制台可以按学号看或看总览，
-  // 所以要在 onCall 的 OPENID 校验之前处理
-  if (data.action === 'debug') {
-    return debug(wxCtx.OPENID, data)
-  }
-
-  // 看看 access_token 兜底通道通不通（不发消息，只换一次 token）
-  if (data.action === 'probeToken') {
-    return probeToken()
-  }
+  // 没有 OPENID 就一定是服务端发起的（定时触发器或控制台手动测试）。
+  // 不用判断 event.Type：不同环境下的定时事件字段不完全一致，
+  // 一旦漏判就会静悄悄地走到下面「没有身份」分支，一点日志都不留。
+  if (!wxCtx.OPENID) return onTimer(data)
 
   return onCall(wxCtx.OPENID, data)
 }
@@ -61,6 +59,89 @@ async function onCall(openid, data) {
   if (action === 'testReminder') return testReminder(openid, data)
   if (action === 'quotaTrail') return quotaTrail(openid)
   return { ok: false, reason: 'bad-action' }
+}
+
+/**
+ * 定时器体检：只读，不发消息、不改数据。
+ * 回答三个问题 —— 现在这个时刻该不该发、今天有哪些检查时刻、定时器最近到底跑没跑。
+ */
+async function timerTrail() {
+  const now = new Date()
+  const t = tt.beijingParts(now)
+
+  // 今天会检查的所有时刻，用来和「几点该收到提醒」对照
+  const plan = []
+  config.BLOCK_START_SECTIONS.forEach(function (section) {
+    const start = tt.sectionStart(section)
+    if (isNaN(start)) return
+    config.ALLOWED_LEAD_MINUTES.forEach(function (lead) {
+      const m = start - lead
+      if (m >= 0) {
+        plan.push({
+          minutes: m,
+          time: hhmm(m),
+          text: '第 ' + section + ' 节（' + hhmm(start) + '）前 ' + lead + ' 分钟'
+        })
+      }
+    })
+  })
+  plan.sort(function (a, b) { return a.minutes - b.minutes })
+
+  let recent = []
+  let logsTotal = -1
+  try {
+    // 不用 orderBy：排序查询一旦因索引问题报错就会被 catch 吞掉，
+    // 表现和「一条记录都没有」完全一样，没法判断。取回来自己排
+    const countRes = await db.collection(config.COLLECTIONS.logs).count()
+    logsTotal = Number(countRes.total) || 0
+
+    const res = await db.collection(config.COLLECTIONS.logs).limit(100).get()
+    recent = (res.data || [])
+      .sort(function (a, b) { return (Number(b.at) || 0) - (Number(a.at) || 0) })
+      .slice(0, 20)
+      .map(function (l) {
+        return {
+          at: formatAt(l.at),
+          type: l.type,
+          time: l.time || '',
+          users: l.users,
+          sent: l.sent,
+          failed: l.failed,
+          eventType: l.eventType || '',
+          trigger: l.trigger || ''
+        }
+      })
+  } catch (err) {
+    logsTotal = -2 // -2 = 读日志本身出错了，和「没有记录」区分开
+    recent = [{ error: errMsg(err) }]
+  }
+
+  let enabledUsers = -1
+  try {
+    enabledUsers = (await readEnabled()).length
+  } catch (err) {
+    enabledUsers = -1
+  }
+
+  const remindNow = tt.isReminderMinute(t.minutes, config.ALLOWED_LEAD_MINUTES, config.BLOCK_START_SECTIONS)
+
+  return {
+    ok: true,
+    now: t.dateKey + ' ' + hhmm(t.minutes) + ' 周' + '一二三四五六日'.charAt(t.weekday - 1),
+    config: {
+      triggers: config.BLOCK_START_SECTIONS,
+      leads: config.ALLOWED_LEAD_MINUTES,
+      maxQuotaPerTap: config.MAX_QUOTA_PER_TAP,
+      mode: config.MODE,
+      state: config.MINIPROGRAM_STATE
+    },
+    isReminderMinuteNow: remindNow,
+    enabledUsers: enabledUsers,
+    planCount: plan.length,
+    plan: plan.map(function (p) { return p.time + ' ' + p.text }),
+    logsTotal: logsTotal,
+    recent: recent
+  }
 }
 
 /**
@@ -647,6 +728,20 @@ async function onTimer(event) {
 
   const t = tt.beijingParts(now)
 
+  // 心跳：每半小时记一条，用来确认定时器还在跑（约 10 条/天）。
+  // event.Type 记下来，排查时能直接看到定时事件带了什么字段
+  // （微信实际发的是小写 'timer'，不是文档里的 'Timer'）。
+  if (t.minutes % 30 < 5) {
+    await writeLog({
+      type: 'heartbeat',
+      time: t.dateKey + ' ' + hhmm(t.minutes),
+      dateKey: t.dateKey,
+      minutes: t.minutes,
+      eventType: event.Type || '',
+      trigger: event.TriggerName || ''
+    })
+  }
+
   // 廉价早退：绝大多数分钟直接在这里返回，不碰数据库。
   // 每个用户可能选不同的提前量，所以按允许值的全集来判断
   if (!tt.isReminderMinute(t.minutes, config.ALLOWED_LEAD_MINUTES, config.BLOCK_START_SECTIONS)) {
@@ -654,20 +749,28 @@ async function onTimer(event) {
   }
 
   const users = await readEnabled()
+
+  // 一次把所有人的课表读回来（按学号批量查，每批 100 条），
+  // 省掉「一人一次查询」—— 人数一多，那是最先撑不住的地方
+  const schedules = users.length ? await readSchedules(users.map(function (u) {
+    return u.studentId
+  })) : {}
+
   let sent = 0
   let failed = 0
   // 逐人明细：控制台测试时能看出扫到了谁、每个人为什么没发
   const details = []
 
-  for (let i = 0; i < users.length; i++) {
-    const u = users[i]
+  // 并发发送：串行处理 1000 人要几分钟，必然超时。
+  // 每条都是网络等待，开 10 路并发对云函数来说很安全
+  await runWithConcurrency(users, SEND_CONCURRENCY, async function (u) {
     const base = {
       studentId: u.studentId || '',
       openidTail: String(u.openid || u._id || '').slice(-6)
     }
 
     try {
-      const r = await remindUser(u, t)
+      const r = await remindUser(u, t, schedules[String(u.studentId || '').trim()])
       sent += r.sent
       failed += r.failed
       details.push(Object.assign(base, { action: r.trace || '未发送' }))
@@ -676,21 +779,24 @@ async function onTimer(event) {
       details.push(Object.assign(base, { action: '处理出错：' + errMsg(err) }))
       console.error('[reminder] 用户处理失败 ' + whoOf(u) + '：' + errMsg(err))
     }
-  }
+  })
 
-  // 这一轮的逐人结果落库，之后在数据库里就能回看
-  if (users.length) {
-    await writeLog({
-      type: 'scan',
-      time: t.dateKey + ' ' + hhmm(t.minutes),
-      dateKey: t.dateKey,
-      minutes: t.minutes,
-      users: users.length,
-      sent: sent,
-      failed: failed,
-      details: details
-    })
-  }
+  details.sort(function (a, b) {
+    return String(a.studentId).localeCompare(String(b.studentId))
+  })
+
+  // 这一轮的逐人结果落库，之后在数据库里就能回看。
+  // 没有开启提醒的用户也要记：「扫到了但没人开」和「根本没触发」是两回事
+  await writeLog({
+    type: 'scan',
+    time: t.dateKey + ' ' + hhmm(t.minutes),
+    dateKey: t.dateKey,
+    minutes: t.minutes,
+    users: users.length,
+    sent: sent,
+    failed: failed,
+    details: details
+  })
 
   console.log('[reminder] 扫描 ' + t.dateKey + ' ' + hhmm(t.minutes) +
     ' 用户=' + users.length + ' 发送=' + sent + ' 失败=' + failed)
@@ -705,8 +811,9 @@ async function onTimer(event) {
 }
 
 /** 给一个用户发这一分钟该发的提醒；返回本次发送条数 */
-async function remindUser(doc, t) {
-  const schedule = await getSchedule(doc.studentId)
+async function remindUser(doc, t, schedule) {
+  // 定时器会把批量读好的课表传进来；小程序端测试时不传，这里再单独读
+  if (schedule === undefined) schedule = await getSchedule(doc.studentId)
   if (!schedule || !Array.isArray(schedule.courses)) {
     return { sent: 0, failed: 0, trace: '云端没有课表备份' }
   }
@@ -1003,6 +1110,60 @@ async function readEnabled() {
     if (list.length < PAGE) break
   }
   return out
+}
+
+/**
+ * 按学号批量读课表，返回 { 学号: 文档 | null }。
+ *
+ * null 表示「查过了，确实没有这份备份」；
+ * **没有这个 key** 表示「那一批查询失败了，不知道」—— 调用方会退回逐个查。
+ */
+async function readSchedules(studentIds) {
+  const map = {}
+  const ids = []
+  ;(studentIds || []).forEach(function (raw) {
+    const id = String(raw || '').trim()
+    if (!id || map[id] !== undefined) return
+    map[id] = null
+    ids.push(id)
+  })
+
+  for (let i = 0; i < ids.length; i += SCHEDULE_BATCH) {
+    const part = ids.slice(i, i + SCHEDULE_BATCH)
+    try {
+      const res = await db.collection(SCHEDULES)
+        .where({ _id: _.in(part) })
+        .limit(SCHEDULE_BATCH)
+        .get()
+      ;(res.data || []).forEach(function (doc) {
+        map[doc._id] = doc
+      })
+    } catch (err) {
+      // 这一批没读成：把 key 删掉，让调用方退回逐个查，宁可慢也别漏发
+      part.forEach(function (id) { delete map[id] })
+      console.warn('[reminder] 批量读课表失败，改为逐个读：' + errMsg(err))
+    }
+  }
+  return map
+}
+
+/** 限制并发跑一批任务，全部结束后 resolve */
+async function runWithConcurrency(items, limit, worker) {
+  const list = items || []
+  if (!list.length) return
+
+  let cursor = 0
+  const lanes = Math.min(limit, list.length)
+  const runners = []
+  for (let i = 0; i < lanes; i++) {
+    runners.push((async function loop() {
+      while (cursor < list.length) {
+        const item = list[cursor++]
+        await worker(item)
+      }
+    })())
+  }
+  await Promise.all(runners)
 }
 
 /**

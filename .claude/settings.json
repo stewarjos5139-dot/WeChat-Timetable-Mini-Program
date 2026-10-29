@@ -33,7 +33,8 @@
       "Read(//c/Program Files \\\\\\(x86\\\\\\)/Tencent/微信web开发者工具/**)",
       "Read(//c/Program Files/Tencent/微信web开发者工具/**)",
       "Bash(awk -F'\\(' '{print $1}')",
-      "mcp__claude-vscode__getDiagnostics"
+      "mcp__claude-vscode__getDiagnostics",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('cloudfunctions/reminder/config.json','utf8'\\)\\)\\)\\)\")"
     ]
   }
 }
