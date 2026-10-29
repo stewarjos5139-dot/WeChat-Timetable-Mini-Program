@@ -3,7 +3,8 @@
     "pages/schedule/schedule",
     "pages/wheel/wheel",
     "pages/mine/mine",
-    "pages/login/login"
+    "pages/login/login",
+    "pages/admin/admin"
   ],
   "window": {
     "navigationBarTextStyle": "black",

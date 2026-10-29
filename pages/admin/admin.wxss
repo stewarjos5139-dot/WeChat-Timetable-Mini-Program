@@ -1,0 +1,448 @@
+/* pages/admin/admin.wxss
+ * 只写这一页独有的部分；.card / .row / .divide / .btn / .num 都在 app.wxss 里，直接复用。 */
+
+.admin {
+  min-height: 100vh;
+  padding: 16rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* ---------- 加载中 / 无权 / 出错 ---------- */
+.state-card {
+  margin-top: 200rpx;
+  padding: 72rpx 48rpx;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.state-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.state-text {
+  margin-top: 14rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: var(--text-2);
+  text-align: center;
+}
+
+/* 无权访问时把自己的 openid 摆出来，点一下复制 */
+.state-openid {
+  margin-top: 24rpx;
+  padding: 14rpx 24rpx;
+  border-radius: var(--r-full);
+  background: var(--fill);
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--text-1);
+  text-align: center;
+  word-break: break-all;
+}
+
+/* ---------- 顶部分段 ---------- */
+.seg {
+  margin-top: 16rpx;
+  padding: 6rpx;
+  border-radius: var(--r-md);
+  background: var(--fill);
+  display: flex;
+}
+
+.seg--sub {
+  margin-top: 24rpx;
+}
+
+.seg-item {
+  flex: 1;
+  height: 64rpx;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  line-height: 64rpx;
+  text-align: center;
+  color: var(--text-2);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.seg-item--on {
+  background: var(--card);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(28, 28, 30, 0.08);
+}
+
+.card {
+  margin-top: 24rpx;
+}
+
+.card--gap {
+  margin-top: 20rpx;
+}
+
+.row-value--danger {
+  color: var(--danger);
+}
+
+.hint {
+  display: block;
+  margin-top: 16rpx;
+  padding: 0 8rpx;
+  font-size: 23rpx;
+  line-height: 1.65;
+  color: var(--text-3);
+}
+
+.hint--warn {
+  color: var(--warn-text);
+}
+
+.act {
+  margin-top: 32rpx;
+}
+
+.empty {
+  padding: 56rpx 0;
+  font-size: 25rpx;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* ---------- 搜索 ---------- */
+.search {
+  margin-top: 24rpx;
+  padding: 0 24rpx;
+  height: 76rpx;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 27rpx;
+  color: var(--text-1);
+}
+
+.search-ph {
+  color: var(--text-3);
+}
+
+/* ---------- 用户行 ---------- */
+.user-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-id {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.user-sub {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--text-3);
+}
+
+.user-side {
+  flex: none;
+  margin-left: 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-count {
+  font-size: 25rpx;
+  color: var(--text-1);
+}
+
+.user-quota {
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  color: var(--text-3);
+}
+
+.user-quota--on {
+  color: var(--accent);
+}
+
+/* ---------- 翻页 ---------- */
+.pager {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pager-btn {
+  padding: 14rpx 32rpx;
+  border-radius: var(--r-full);
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  font-size: 25rpx;
+  color: var(--text-1);
+}
+
+.pager-btn--off {
+  color: var(--text-3);
+  opacity: 0.5;
+}
+
+.pager-text {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+
+/* ---------- 日志 ---------- */
+.log-row {
+  padding: 20rpx 28rpx;
+}
+
+.log-text {
+  font-size: 23rpx;
+  line-height: 1.5;
+  color: var(--text-2);
+  word-break: break-all;
+}
+
+.log-details {
+  margin-top: 10rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-detail {
+  font-size: 21rpx;
+  line-height: 1.7;
+  color: var(--text-3);
+  word-break: break-all;
+}
+
+/* ---------- 公告表单 ---------- */
+.field {
+  padding: 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+}
+
+.field--area {
+  align-items: flex-start;
+}
+
+.field-label {
+  flex: none;
+  width: 96rpx;
+  font-size: 27rpx;
+  color: var(--text-1);
+}
+
+.field-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 27rpx;
+  color: var(--text-1);
+}
+
+.field-area {
+  flex: 1;
+  min-width: 0;
+  min-height: 220rpx;
+  font-size: 26rpx;
+  line-height: 1.65;
+  color: var(--text-1);
+}
+
+.ph {
+  color: var(--text-3);
+}
+
+.notice-actions {
+  margin-top: 32rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.notice-actions .btn {
+  flex: 1;
+}
+
+/* ---------- 底部弹层 ---------- */
+.mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-mask);
+  background: rgba(28, 28, 30, 0.4);
+  animation: admin-fade-in 0.2s ease;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-sheet);
+  max-height: 82vh;
+  padding: 0 32rpx;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: var(--card);
+  box-shadow: 0 -8rpx 40rpx rgba(28, 28, 30, 0.08);
+  display: flex;
+  flex-direction: column;
+  animation: admin-sheet-in 0.24s var(--ease);
+}
+
+.sheet-bar {
+  width: 72rpx;
+  height: 8rpx;
+  margin: 16rpx auto 8rpx;
+  border-radius: var(--r-full);
+  background: var(--line);
+}
+
+.sheet-head {
+  padding: 12rpx 4rpx 20rpx;
+}
+
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.sheet-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  color: var(--text-3);
+}
+
+/* scroll-view 需要确定高度才能滚动，这里固定 44vh（约 4~6 门课的高度） */
+.sheet-body {
+  height: 44vh;
+}
+
+.sheet-block {
+  padding: 18rpx 4rpx;
+  border-top: 1rpx solid var(--line);
+}
+
+.sheet-k {
+  display: block;
+  font-size: 23rpx;
+  color: var(--text-3);
+}
+
+.sheet-v {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 26rpx;
+  color: var(--text-1);
+}
+
+.sheet-course {
+  display: block;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.sheet-meta {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--text-3);
+}
+
+.sheet-actions {
+  padding: 24rpx 0 8rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.sheet-actions .btn {
+  flex: 1;
+}
+
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.sheet-safe {
+  height: calc(16rpx + env(safe-area-inset-bottom));
+}
+
+@keyframes admin-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes admin-sheet-in {
+  from { transform: translateY(40rpx); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ---------- 弹窗开关 ---------- */
+.n-hit {
+  flex: none;
+  margin: -16rpx -8rpx -16rpx 8rpx;
+  padding: 16rpx 8rpx;
+  display: flex;
+  align-items: center;
+}
+
+.n-hit--hover {
+  opacity: 0.75;
+}
+
+.n-switch {
+  position: relative;
+  width: 88rpx;
+  height: 52rpx;
+  border-radius: var(--r-full);
+  background: var(--line);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.n-switch--on {
+  background: var(--accent);
+}
+
+.n-switch-knob {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(28, 28, 30, 0.18);
+  transition: transform var(--dur) var(--ease);
+}
+
+.n-switch--on .n-switch-knob {
+  transform: translateX(36rpx);
+}
+
+.n-note {
+  padding: 20rpx 28rpx 24rpx;
+  font-size: 23rpx;
+  line-height: 1.65;
+  color: var(--text-3);
+}

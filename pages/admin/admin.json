@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "后台管理",
+  "navigationBarBackgroundColor": "#F6F5F2",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#F6F5F2",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
+}

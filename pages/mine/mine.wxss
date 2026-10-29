@@ -314,20 +314,37 @@
   color: var(--accent);
 }
 
-/* ---------- 用 button 做的列表行（分享给同学） ----------
- * 原生 button 自带灰底、圆角、内边距和 ::after 边框，
- * 这里全部清掉，让它的外观和 .row 完全一致。 */
-.row-btn {
-  width: 100%;
-  padding: 0 28rpx;
-  background: transparent;
-  border-radius: 0;
-  font-size: inherit;
-  line-height: normal;
-  text-align: left;
-  color: inherit;
+/* ---------- 分享给同学：普通行 + 铺满整行的透明按钮 ----------
+ * 微信 button 的内置样式优先级高于页面样式（display:block、position:relative、
+ * 自带内外边距），不加 !important 的话 position:absolute 会被压回去，
+ * 按钮就缩成自身内容大小留在流里 —— 表现就是「只有某一段能点」。
+ * 所以布局相关的属性一律 !important。 */
+.row--share {
+  position: relative;
 }
 
-.row-btn::after {
-  border: none;
+.row-share-btn {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  z-index: 1;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  line-height: normal !important;
+}
+
+.row-share-btn::after {
+  border: none !important;
+}
+
+/* 铺满整行的按钮不能用实色背景，会盖住行内容，只能半透明 */
+.row-share-btn--hover {
+  background: rgba(28, 28, 30, 0.04) !important;
 }

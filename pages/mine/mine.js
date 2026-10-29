@@ -385,6 +385,22 @@ Page({
     wx.navigateTo({ url: '../login/login' })
   },
 
+  /**
+   * 后台入口：2 秒内连点版本号 5 次。
+   * 只是不想让入口显眼，真正的权限在云函数 admin 里按 openid 判。
+   */
+  onVersionTap() {
+    const now = Date.now()
+    if (now - (this._verAt || 0) > 2000) this._verCount = 0
+    this._verAt = now
+
+    this._verCount = (this._verCount || 0) + 1
+    if (this._verCount < 5) return
+
+    this._verCount = 0
+    wx.navigateTo({ url: '../admin/admin' })
+  },
+
   onClearSchedule() {
     if (!this.data.hasSchedule) {
       this.tip('还没有导入课表')

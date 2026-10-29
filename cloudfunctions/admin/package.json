@@ -1,0 +1,10 @@
+{
+  "name": "admin",
+  "version": "1.0.0",
+  "description": "小程序内后台管理：统计、用户、日志、公告",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

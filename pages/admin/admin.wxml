@@ -1,0 +1,260 @@
+<!--pages/admin/admin.wxml-->
+<view class="admin">
+
+  <view class="state-card" wx:if="{{!ready}}">
+    <text class="state-text">加载中…</text>
+  </view>
+
+  <view class="state-card" wx:elif="{{forbidden}}">
+    <text class="state-title">无权访问</text>
+    <text class="state-text">当前微信号不在后台白名单里。</text>
+    <text class="state-openid num" wx:if="{{myOpenid}}" bindtap="onCopyOpenid">{{myOpenid}}</text>
+    <text class="state-text" wx:if="{{myOpenid}}">点上面这行可以复制。填进 cloudfunctions/admin/config.js 的 ADMIN_OPENIDS，重新部署云函数后再进来。</text>
+  </view>
+
+  <view class="state-card" wx:elif="{{error}}">
+    <text class="state-title">加载失败</text>
+    <text class="state-text">{{error}}</text>
+  </view>
+
+  <block wx:else>
+    <view class="seg">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="seg-item {{tab === item.key ? 'seg-item--on' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="switchTab"
+      >{{item.label}}</view>
+    </view>
+
+    <!-- ============ 概览 ============ -->
+    <block wx:if="{{tab === 'stats'}}">
+      <view class="card">
+        <view class="row">
+          <text class="row-label">课表用户</text>
+          <text class="row-value num">{{stats.scheduleCount}}</text>
+        </view>
+        <view class="divide"></view>
+        <view class="row">
+          <text class="row-label">提醒记录</text>
+          <text class="row-value num">{{stats.reminderCount}}</text>
+        </view>
+        <view class="divide"></view>
+        <view class="row">
+          <text class="row-label">已开启提醒</text>
+          <text class="row-value num">{{stats.enabledCount}}</text>
+        </view>
+        <view class="divide"></view>
+        <view class="row">
+          <text class="row-label">剩余额度合计</text>
+          <text class="row-value num">{{stats.quotaTotal}}</text>
+        </view>
+      </view>
+
+      <view class="card card--gap">
+        <view class="row">
+          <text class="row-label">今天扫描批次</text>
+          <text class="row-value num">{{stats.scansToday}}</text>
+        </view>
+        <view class="divide"></view>
+        <view class="row">
+          <text class="row-label">今天已发送</text>
+          <text class="row-value num">{{stats.sentToday}}</text>
+        </view>
+        <view class="divide"></view>
+        <view class="row">
+          <text class="row-label">今天失败</text>
+          <text class="row-value num {{stats.failedToday ? 'row-value--danger' : ''}}">{{stats.failedToday}}</text>
+        </view>
+        <view class="divide"></view>
+        <view class="row">
+          <text class="row-label">定时器最近心跳</text>
+          <text class="row-value {{heartbeatStale ? 'row-value--danger' : ''}}">{{heartbeatText}}</text>
+        </view>
+      </view>
+
+      <text class="hint hint--warn" wx:if="{{heartbeatStale}}">超过 30 分钟没有心跳，先去看云函数的定时触发器还在不在。</text>
+
+      <view class="act">
+        <view class="btn btn--ghost" bindtap="onRefresh" hover-class="btn--ghost-hover" hover-stay-time="60">刷新</view>
+      </view>
+    </block>
+
+    <!-- ============ 用户 ============ -->
+    <block wx:if="{{tab === 'users'}}">
+      <view class="search">
+        <input
+          class="search-input"
+          value="{{userKeyword}}"
+          bindinput="onUserSearch"
+          placeholder="搜学号或姓名"
+          placeholder-class="search-ph"
+          confirm-type="search"
+        />
+      </view>
+
+      <view class="card">
+        <block wx:for="{{users}}" wx:key="studentId">
+          <view
+            class="row"
+            data-id="{{item.studentId}}"
+            bindtap="openUser"
+            hover-class="row--hover"
+            hover-stay-time="60"
+          >
+            <view class="user-main">
+              <text class="user-id num">{{item.studentId}}</text>
+              <text class="user-sub">{{item.name || '未记录姓名'}} · {{item.updatedText}}</text>
+            </view>
+            <view class="user-side">
+              <text class="user-count num">{{item.courseCount}} 门</text>
+              <text class="user-quota {{item.reminder && item.reminder.enabled ? 'user-quota--on' : ''}}">{{item.quotaText}}</text>
+            </view>
+          </view>
+          <view class="divide" wx:if="{{index < users.length - 1}}"></view>
+        </block>
+        <view class="empty" wx:if="{{!users.length}}">{{userLoading ? '加载中…' : '没有匹配的用户'}}</view>
+      </view>
+
+      <view class="pager">
+        <view class="pager-btn {{userPage <= 1 ? 'pager-btn--off' : ''}}" bindtap="onUserPrev">上一页</view>
+        <text class="pager-text num">{{userPage}} / {{userMaxPage}}</text>
+        <view class="pager-btn {{userPage >= userMaxPage ? 'pager-btn--off' : ''}}" bindtap="onUserNext">下一页</view>
+      </view>
+    </block>
+
+    <!-- ============ 日志 ============ -->
+    <block wx:if="{{tab === 'logs'}}">
+      <view class="seg seg--sub">
+        <view
+          wx:for="{{logTypes}}"
+          wx:key="key"
+          class="seg-item {{logType === item.key ? 'seg-item--on' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="onLogType"
+        >{{item.label}}</view>
+      </view>
+
+      <view class="card">
+        <block wx:for="{{logs}}" wx:key="key">
+          <view class="log-row">
+            <text class="log-text num">{{item.text}}</text>
+            <view class="log-details" wx:if="{{item.detailLines}}">
+              <text
+                class="log-detail num"
+                wx:for="{{item.detailLines}}"
+                wx:for-item="line"
+                wx:key="*this"
+              >{{line}}</text>
+            </view>
+          </view>
+          <view class="divide" wx:if="{{index < logs.length - 1}}"></view>
+        </block>
+        <view class="empty" wx:if="{{!logs.length}}">没有日志</view>
+      </view>
+
+      <view class="pager">
+        <view class="pager-btn {{logPage <= 1 ? 'pager-btn--off' : ''}}" bindtap="onLogPrev">上一页</view>
+        <text class="pager-text num">{{logPage}} / {{logMaxPage}}</text>
+        <view class="pager-btn {{logPage >= logMaxPage ? 'pager-btn--off' : ''}}" bindtap="onLogNext">下一页</view>
+      </view>
+
+      <view class="act">
+        <view class="btn btn--ghost" bindtap="onClearLogs" hover-class="btn--ghost-hover" hover-stay-time="60">清理 30 天前的日志</view>
+      </view>
+    </block>
+
+    <!-- ============ 公告 ============ -->
+    <block wx:if="{{tab === 'notice'}}">
+      <view class="card">
+        <view class="row">
+          <text class="row-label">弹窗开关</text>
+          <view
+            class="n-hit"
+            bindtap="onToggleNotice"
+            hover-class="n-hit--hover"
+            hover-stay-time="60"
+            aria-role="switch"
+            aria-checked="{{noticeActive}}"
+          >
+            <view class="n-switch {{noticeActive ? 'n-switch--on' : ''}}">
+              <view class="n-switch-knob"></view>
+            </view>
+          </view>
+        </view>
+        <view class="divide"></view>
+        <view class="n-note">关闭后，即使公告还有内容、还有用户没收到，也不会再弹。只控制「弹不弹」，不影响内容。</view>
+      </view>
+
+      <view class="card card--gap">
+        <view class="field">
+          <text class="field-label">标题</text>
+          <input
+            class="field-input"
+            value="{{noticeTitle}}"
+            bindinput="onNoticeTitle"
+            maxlength="40"
+            placeholder="例：v0.2.2 更新说明"
+            placeholder-class="ph"
+          />
+        </view>
+        <view class="divide"></view>
+        <view class="field field--area">
+          <text class="field-label">正文</text>
+          <textarea
+            class="field-area"
+            value="{{noticeBody}}"
+            bindinput="onNoticeBody"
+            maxlength="2000"
+            auto-height
+            placeholder="支持换行，用户会在课表页看到一个可滚动的弹窗"
+            placeholder-class="ph"
+          />
+        </view>
+      </view>
+
+      <text class="hint hint--warn" wx:if="{{noticeError}}">{{noticeError}}</text>
+      <text class="hint">「保存草稿」只保存内容，不改开关；「发布」会让所有用户下次打开都重新弹一次，并自动打开开关。</text>
+
+      <view class="notice-actions">
+        <view class="btn btn--ghost" bindtap="onNoticeDraft" hover-class="btn--ghost-hover" hover-stay-time="60">保存草稿</view>
+        <view class="btn" bindtap="onNoticePublish" hover-class="btn--hover" hover-stay-time="60">发布给所有人</view>
+      </view>
+    </block>
+  </block>
+
+  <!-- ============ 用户详情 ============ -->
+  <block wx:if="{{showDetail}}">
+    <view class="mask" bindtap="closeUser" catchtouchmove="noop"></view>
+    <view class="sheet" catchtouchmove="noop">
+      <view class="sheet-bar"></view>
+
+      <view class="sheet-head">
+        <text class="sheet-title num">{{detail.studentId}}</text>
+        <text class="sheet-sub">{{detail.hasSchedule ? detail.courses.length + ' 门课 · 最后备份 ' + detail.updatedText : '云端没有课表'}}</text>
+      </view>
+
+      <scroll-view class="sheet-body" scroll-y>
+        <view class="sheet-block" wx:if="{{detail.reminder}}">
+          <text class="sheet-k">提醒</text>
+          <text class="sheet-v">{{detail.reminder.enabled ? '已开启 · 剩余 ' + detail.reminder.quota + ' 次 · 提前 ' + detail.reminder.leadMinutes + ' 分钟' : '未开启'}}</text>
+          <text class="sheet-v">最近发送：{{detail.reminder.lastSentText}}</text>
+        </view>
+
+        <view class="sheet-block" wx:for="{{detail.courses}}" wx:key="id">
+          <text class="sheet-course">{{item.name}}</text>
+          <text class="sheet-meta">{{item.timeText}} · {{item.weekText}}{{item.room ? ' · ' + item.room : ''}}</text>
+        </view>
+
+        <view class="empty" wx:if="{{!detail.courses.length}}">云端没有课表备份</view>
+      </scroll-view>
+
+      <view class="sheet-actions">
+        <view class="btn btn--ghost" bindtap="onCloseReminder" hover-class="btn--ghost-hover" hover-stay-time="60">关闭提醒</view>
+        <view class="btn btn--danger" bindtap="onDeleteSchedule" hover-class="btn--hover" hover-stay-time="60">删除云端课表</view>
+      </view>
+      <view class="sheet-safe"></view>
+    </view>
+  </block>
+</view>

@@ -409,3 +409,28 @@
   </view>
   <view class="sheet-safe"></view>
 </view>
+
+<!-- 公告：在「我的 → 连点版本号 5 次 → 公告」里发布，每个用户下次冷启动看到一次 -->
+<view class="dialog" wx:if="{{showNotice}}" catchtouchmove="noop" catchtap="noop">
+  <view class="dialog-card notice-card" aria-role="dialog" aria-label="{{notice.title}}">
+    <view
+      class="dialog-close"
+      bindtap="onCloseNotice"
+      hover-class="dialog-close--hover"
+      hover-stay-time="60"
+    >
+      <image class="dialog-close-icon" src="/assets/icons/close.svg" mode="aspectFit" />
+    </view>
+
+    <text class="dialog-title notice-title">{{notice.title}}</text>
+
+    <scroll-view class="notice-body" scroll-y>
+      <text class="notice-text">{{notice.body}}</text>
+    </scroll-view>
+
+    <view class="dialog-actions">
+      <view class="btn" bindtap="onCloseNotice" hover-class="btn--hover" hover-stay-time="60">知道了</view>
+    </view>
+  </view>
+</view>
+

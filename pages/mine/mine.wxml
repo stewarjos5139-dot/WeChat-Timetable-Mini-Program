@@ -164,11 +164,27 @@
         </view>
 
         <view class="divide"></view>
+        
+        <!-- 分享给同学：普通行 + 一层透明按钮铺满，视觉和上面几行完全一致 -->
+        <view class="row row--share">
+          <image class="row-icon" src="/assets/icons/share.svg" mode="aspectFit" />
+          <text class="row-label">分享给同学</text>
+          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
+          <button
+            class="row-share-btn"
+            open-type="share"
+            hover-class="row-share-btn--hover"
+            hover-stay-time="60"
+            aria-label="分享给同学"
+          ></button>
+        </view>
+
+        <view class="divide"></view>
 
         <view class="row" bindtap="onAbout" hover-class="row--hover" hover-stay-time="60" aria-role="button">
           <image class="row-icon" src="/assets/icons/info.svg" mode="aspectFit" />
           <text class="row-label">关于 星瞢课表</text>
-          <text class="row-value num">v{{version}}</text>
+          <text class="row-value num" catchtap="onVersionTap">v{{version}}</text>
           <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
         </view>
         <view class="divide"></view>
@@ -186,21 +202,8 @@
             <text class="row-value" wx:if="{{officialAccount.name}}">{{officialAccount.name}}</text>
             <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
           </view>
-          <view class="divide"></view>
+          
         </block>
-
-        <!-- 分享给同学：open-type="share" 走 onShareAppMessage -->
-        <button
-          class="row row-btn"
-          open-type="share"
-          hover-class="row--hover"
-          hover-stay-time="60"
-          aria-role="button"
-        >
-          <image class="row-icon" src="/assets/icons/share.svg" mode="aspectFit" />
-          <text class="row-label">分享给同学</text>
-          <image class="row-arrow" src="/assets/icons/chevron.svg" mode="aspectFit" />
-        </button>
 
       </view>
     </view>

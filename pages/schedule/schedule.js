@@ -1,5 +1,6 @@
 // pages/schedule/schedule.js
 const config = require('../../utils/config')
+const notice = require('../../utils/notice')
 const share = require('../../utils/share')
 const store = require('../../utils/store')
 const cloud = require('../../utils/cloud')
@@ -377,6 +378,10 @@ Page({
     showGuide: false,
     guideLeaving: false,
 
+    // 公告弹窗：后台发布后，每个用户下次冷启动看到一次
+    showNotice: false,
+    notice: null,
+
     // 点空白格出现的「＋」：{ week, day, start }，null 表示不显示
     plus: null,
 
@@ -430,6 +435,13 @@ Page({
 
     // 云端那份也是提醒的数据源：回到课表页顺手补传一次，失败静默
     cloud.ensureBackup()
+
+    // 公告：每次启动只查一次，有未读的才弹
+    notice.pick().then(n => {
+      if (!n || this.data.showNotice) return
+      this.setData({ notice: n, showNotice: true })
+      this.syncTabBar()
+    })
   },
 
   /** 把「我的」页选的字号同步过来；档位没变就不 setData，避免多余重绘 */
@@ -920,6 +932,13 @@ Page({
     })
   },
 
+  /** 关掉公告弹窗。看过就记住这一版，同一个版本不再弹 */
+  onCloseNotice() {
+    notice.markSeen(this.data.notice)
+    this.setData({ showNotice: false, notice: null })
+    this.syncTabBar()
+  },
+
   /**
    * 有底部弹层（详情 / 编辑）时把 tabBar 滑走，关掉后滑回来。
    * 自定义 tabBar 在页面之上的独立层，z-index 盖不住，只能让它让开。
@@ -928,7 +947,7 @@ Page({
     const bar = typeof this.getTabBar === "function" && this.getTabBar()
     if (!bar) return
     // 周次卡片只会叠在编辑弹层上打开，showEditor 已经覆盖；一并写上防止以后单独打开时漏掉
-    const hidden = !!(this.data.showDetail || this.data.showEditor || this.data.showWeeks)
+    const hidden = !!(this.data.showDetail || this.data.showEditor || this.data.showWeeks || this.data.showNotice)
     if (bar.data.hidden !== hidden) bar.setData({ hidden: hidden })
   },
 

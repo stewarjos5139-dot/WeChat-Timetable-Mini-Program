@@ -990,3 +990,28 @@
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+/* ---------- 公告弹窗 ----------
+ * 复用 app.wxss 的 .dialog / .dialog-card / .btn，
+ * 这里只补正文区：左对齐、保留换行、太长时内部滚动。 */
+.notice-card {
+  align-items: stretch;
+  padding: 52rpx 44rpx 36rpx;
+}
+
+.notice-title {
+  text-align: center;
+}
+
+.notice-body {
+  max-height: 520rpx;
+  margin-top: 24rpx;
+}
+
+.notice-text {
+  font-size: 27rpx;
+  line-height: 1.72;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
