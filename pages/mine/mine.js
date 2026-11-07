@@ -5,7 +5,7 @@ const cloud = require('../../utils/cloud')
 const reminder = require('../../utils/reminder')
 const share = require('../../utils/share')
 
-const VERSION = '0.2.1'
+const VERSION = '0.2.2'
 
 /** 可选的课前提醒分钟数，来自 utils/reminder.js（与服务端白名单一致） */
 const LEAD_OPTIONS = reminder.LEAD_OPTIONS
